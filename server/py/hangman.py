@@ -1,3 +1,4 @@
+from modulefinder import Module
 from typing import List, Optional, Type
 import random
 from enum import Enum
@@ -9,7 +10,6 @@ from server.py.game import Game, Player
 
 class GuessLetterAction(BaseModel):
     letter: str
-
     @validator('letter')
     def validate_letter(cls, v):
         if v.upper() not in string.ascii_uppercase:
@@ -63,18 +63,18 @@ class Hangman(Game):
 
     def apply_action(self, action: GuessLetterAction) -> None:
         if self.state and self.state.phase == GamePhase.RUNNING:
-            letter = action.letter.lower()
+            letter = action.letter.upper()
             self.state.guesses.append(letter)
-            if letter not in self.state.word_to_guess.lower():
+            if letter not in self.state.word_to_guess.upper():
                 self.state.incorrect_guesses.append(letter)
 
             # Check if the game is finished
-            word_set = set(self.state.word_to_guess.lower())
+            word_set = set(self.state.word_to_guess.upper())
             guessed_set = set(self.state.guesses)
             if word_set.issubset(guessed_set):
                 self.state.phase = GamePhase.FINISHED
                 print("Congratulations! You've guessed the word.")
-            elif len(self.state.incorrect_guesses) >= 6:  # Limit for incorrect guesses
+            elif len(self.state.incorrect_guesses) >= 8:  # Limit for incorrect guesses
                 self.state.phase = GamePhase.FINISHED
                 print(f"Game Over! The word was: {self.state.word_to_guess}")
 
