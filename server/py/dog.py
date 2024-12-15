@@ -5,6 +5,7 @@ import copy
 from typing import List, Optional, ClassVar
 from enum import Enum
 from pydantic import BaseModel
+
 if __name__ == '__main__':
     from game import Game, Player
 else:
@@ -99,7 +100,7 @@ class GameState(BaseModel):
     phase: GamePhase = GamePhase.SETUP  # current phase of the game
     cnt_round: int = 0  # current round
     bool_card_exchanged: bool = False  # true if cards was exchanged in round
-    list_swap_card: List[Optional[Card]] = [None]*4 # empty Carddeck for cards to be swapt
+    list_swap_card: List[Optional[Card]] = [None] * 4  # empty Carddeck for cards to be swapt
     idx_player_started: int = random.randint(0, 3)  # index of player that started the round
     idx_player_active: int = idx_player_started  # index of active player in round
     list_player: List[PlayerState] = []  # list of players
@@ -193,7 +194,6 @@ class GameState(BaseModel):
         self.list_card_discard.extend(self.list_player[self.idx_player_active].list_card)
         self.list_player[self.idx_player_active].list_card = []
 
-
     def get_list_possible_action(self) -> List[Action]:  # Nicolas
         list_steps_split_7 = [
             [1, 1, 1, 1, 1, 1, 1],
@@ -219,7 +219,6 @@ class GameState(BaseModel):
         oponent_players = [oponent for oponent in self.list_player if oponent.name != active_player.name]
         action_list = []
 
-
         #  Todo Home Check
         leaving_marble = None
         for marble in marbles:
@@ -229,13 +228,19 @@ class GameState(BaseModel):
                         match card.rank:
                             case 'K':
                                 leaving_marble = marble
-                                action_list.append(Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None))
+                                action_list.append(
+                                    Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos,
+                                           card_swap=None))
                             case 'A':
                                 leaving_marble = marble
-                                action_list.append(Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None))
+                                action_list.append(
+                                    Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos,
+                                           card_swap=None))
                             case 'JKR':
                                 leaving_marble = marble
-                                action_list.append(Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None))
+                                action_list.append(
+                                    Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos,
+                                           card_swap=None))
                             case _:
                                 pass
             else:
@@ -275,9 +280,9 @@ class GameState(BaseModel):
                         case 'J':
                             for oponent_player in oponent_players:
                                 for oponent_marble in oponent_player.list_marble:
-                                    if not oponent_marble.is_save: 
-                                        action_list.append(Action(card = card,pos_from = marble.pos,
-                                                                  pos_to = oponent_marble.pos, card_swap = None))
+                                    if not oponent_marble.is_save:
+                                        action_list.append(Action(card=card, pos_from=marble.pos,
+                                                                  pos_to=oponent_marble.pos, card_swap=None))
                         case 'Q':
                             action_list.append(
                                 Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + 12) % 64, card_swap=None))
@@ -322,9 +327,9 @@ class GameState(BaseModel):
                                 Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + 1) % 64, card_swap=None))
                             for oponent_player in oponent_players:
                                 for oponent_marble in oponent_player.list_marble:
-                                    if not oponent_marble.is_save: 
-                                        action_list.append(Action(card = card,pos_from = marble.pos,
-                                                                  pos_to = oponent_marble.pos, card_swap = None))
+                                    if not oponent_marble.is_save:
+                                        action_list.append(Action(card=card, pos_from=marble.pos,
+                                                                  pos_to=oponent_marble.pos, card_swap=None))
                         case _:
                             pass
 
@@ -334,7 +339,7 @@ class GameState(BaseModel):
         # Action is from the active Player
         # Set Action to the GameState ==> make movement on the "board"
 
-        return 
+        # return
 
         # Get the active player
         active_player = self.list_player[self.idx_player_active]
@@ -355,7 +360,7 @@ class GameState(BaseModel):
                     self.sending_home(opponent_marble)  # Send the opponent's marble home
 
         #TODO: function check_special_action | input Action | output = True/False
-        #   ==> Check if it is a special card or not
+        #   ==> Check if it is a special card or not # This is done
         def check_special_action(action: Action) -> bool:
             if action.card.rank in ['7', 'J', 'JKR']:
                 return True
@@ -364,6 +369,7 @@ class GameState(BaseModel):
         #   ==> Check if it is a nomal foreward movement or not
 
         #TODO:  if Normal make movement
+
         #       if special
         # Handle special cards
         if action.card.rank == '7':
@@ -383,14 +389,12 @@ class GameState(BaseModel):
             # Reset the active card for regular actions
             self.card_active = None
 
-
         #TODO:
         # function for sending home | input= Action | output = None
         #   ==> Function is sending other marbels home if possible
         #   ==> Logic not implementet in set_action_to_game
 
         # Check if the marble's new position is in a final or safe zone
-
 
         self.check_final_pos(pos_to=action.pos_to, pos_from=action.pos_from, marble=marble_to_move)
 
@@ -402,13 +406,10 @@ class GameState(BaseModel):
                 if opponent_marble:
                     self.sending_home(opponent_marble)  # Send the opponent's marble home
         # ____________________________
-        
-        
-        
+
         # Discard the played card
         active_player.list_card.remove(action.card)
         self.list_card_discard.append(action.card)
-
 
     def exchange_cards(self, action_cardswap: Action) -> None:
 
@@ -419,15 +420,15 @@ class GameState(BaseModel):
         # Check iff all Player selected a Card, Return if not
         if None in self.list_swap_card:
             return
-        
+
         # Swap Cards with teammember
         for i, player in enumerate(self.list_player):
             opposite_player_index = (i + 2) % 4  # Index des Teammitglieds
             player.list_card.append(self.list_swap_card[opposite_player_index])
-        
+
         # Set global Variables
         self.bool_card_exchanged = True
-        self.list_swap_card = [None]*4
+        self.list_swap_card = [None] * 4
 
         return
 
@@ -499,7 +500,7 @@ class GameState(BaseModel):
                     return False
         return True
 
-# MARC: Bgit HODE is_player_finished einfügen
+    # MARC: Bgit HODE is_player_finished einfügen
 
     def check_game_end(self) -> None:
         team1 = [self.list_player[0], self.list_player[2]]
@@ -537,7 +538,7 @@ class GameState(BaseModel):
         """
         # Get infos from Gamestate
         active_player = self.list_player[self.idx_player_active]
-        final_pos = active_player.list_marble[-1].start_pos+1
+        final_pos = active_player.list_marble[-1].start_pos + 1
 
         # get positions
         startpos = active_player.start_pos
@@ -547,16 +548,16 @@ class GameState(BaseModel):
         # Calculate the movement for go Final
         if startpos > 0 or pos_from > pos_to:
             steps = pos_to - pos_from
-            stepps_to_final = startpos-pos_from
+            stepps_to_final = startpos - pos_from
             overlap = abs(abs(steps) - abs(stepps_to_final))
         else:
-            steps = 64-pos_to-pos_from
-            stepps_to_final = startpos-pos_from
+            steps = 64 - pos_to - pos_from
+            stepps_to_final = startpos - pos_from
             overlap = abs(abs(steps) - abs(stepps_to_final))
 
         # when the reminderstps after start are between 1&4 go in final
-        if abs(overlap) <5:
-            set_pos_to = final_pos + abs(overlap)-1
+        if abs(overlap) < 5:
+            set_pos_to = final_pos + abs(overlap) - 1
             new_action = Action(card=action_to_check.card,
                                 pos_from=action_to_check.pos_from,
                                 pos_to=set_pos_to,
@@ -573,20 +574,20 @@ class GameState(BaseModel):
         """
 
         # Start with the next player
-        idx_next_player = (self.idx_player_active +1) %4
+        idx_next_player = (self.idx_player_active + 1) % 4
 
         # Loop through players until a player with cards is found or the cycle returns to the active player
         while not self.list_player[idx_next_player].list_card and idx_next_player != self.idx_player_active:
-            idx_next_player = (idx_next_player + 1)%4
-            
+            idx_next_player = (idx_next_player + 1) % 4
+
         # Check if a player with cards was found
         if self.list_player[idx_next_player].list_card:
             self.idx_player_active = idx_next_player
 
-        else: #All players are out of cards
+        else:  #All players are out of cards
             # Move to the next start player
             self.deal_cards()
-            self.idx_player_started = (self.idx_player_active +1) %4
+            self.idx_player_started = (self.idx_player_active + 1) % 4
             self.idx_player_active = self.idx_player_started
 
 
@@ -617,9 +618,10 @@ class Dog(Game):
         """ Get a list of possible actions for the active player """
         # Swap Card Actions
         if self.state.bool_card_exchanged is False:
-            action_list = [Action(card=hand_card,pos_from=None, pos_to=None) for hand_card in self.state.list_player[self.state.idx_player_active].list_card]
+            action_list = [Action(card=hand_card, pos_from=None, pos_to=None) for hand_card in
+                           self.state.list_player[self.state.idx_player_active].list_card]
             return action_list
-        
+
         if self.state.card_active is None:
             action_list = self.state.get_list_possible_action()
 
@@ -642,7 +644,7 @@ class Dog(Game):
 
     def get_player_view(self, idx_player: int) -> GameState:
         """Returns the masked game state for the other players."""
-        masked_state = copy.deepcopy(self.state) # Start with the full state
+        masked_state = copy.deepcopy(self.state)  # Start with the full state
 
         # Mask the cards of the other players.
         for i in range(4):
@@ -650,6 +652,7 @@ class Dog(Game):
                 masked_state.list_player[i].list_card = [Card(suit="", rank="X")] * len(
                     masked_state.list_player[i].list_card)
         return masked_state
+
 
 class RandomPlayer(Player):
 
@@ -690,11 +693,11 @@ if __name__ == '__main__':
 
             # If there are possible actions, choose one
             action = random.choice(list_action)
-            print(f"Action from Player{state.idx_player_active} is",action)
+            print(f"Action from Player{state.idx_player_active} is", action)
             if action is not None:
                 game.apply_action(action)
 
-            else: # if not: delet all cards for this round
+            else:  # if not: delet all cards for this round
                 game.state.discard_invalid_cards()
 
             state = game.get_player_view(idx_player_you)
@@ -715,12 +718,11 @@ if __name__ == '__main__':
             if action is not None:
                 print(f"Player {game.state.idx_player_active} is playing")
                 # await asyncio.sleep(1)
-                print(f"Action from Player{state.idx_player_active} is",action)
+                print(f"Action from Player{state.idx_player_active} is", action)
                 game.apply_action(action)
-            else:# if not: delet all cards for this round
+            else:  # if not: delet all cards for this round
                 game.state.discard_invalid_cards()
-            
-            
+
             player_state = game.get_player_view(idx_player_you)  # Abbildung für Person zeigen
             dict_state = player_state.model_dump()
             dict_state['idx_player_you'] = idx_player_you
@@ -730,13 +732,12 @@ if __name__ == '__main__':
             # await websocket.send_json(data)
 
         print("Next Player Active?: ", game.state.idx_player_active)
-        print("Exchanged? ",game.state.bool_card_exchanged)
+        print("Exchanged? ", game.state.bool_card_exchanged)
         print("Speciality? card_active? ", game.state.card_active)
-        print("*"*50)
-
+        print("*" * 50)
 
         # Keeps game away from infinityloop
-        if debug_counter >10:
-            print("-"*50,"> break becaus of counter")
+        if debug_counter > 10:
+            print("-" * 50, "> break becaus of counter")
             break
-        debug_counter+=1
+        debug_counter += 1
