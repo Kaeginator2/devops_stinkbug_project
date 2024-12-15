@@ -6,6 +6,8 @@ from fastapi.templating import Jinja2Templates
 import json
 import asyncio
 
+from pydantic import BaseModel
+
 import server.py.hangman as hangman
 import server.py.battleship_solution as battleship
 #import server.py.battleship as battleship
@@ -304,34 +306,35 @@ async def dog_singleplayer(request: Request):
 async def dog_singleplayer_ws(websocket: WebSocket):
     await websocket.accept()
 
-    idx_player_you = 0
+    idx_player_you = 0  # Player index for the connected client
 
     try:
         game = dog.Dog()
-        player = dog.RandomPlayer()
 
         while True:
-            state = game.get_player_view(idx_player_you)  # Ensure this returns consistent data
+            state = game.get_player_view(idx_player_you)
 
             if state.phase == dog.GamePhase.FINISHED:
                 break
 
-            dict_state = state if isinstance(state, dict) else state.dict()  # Ensure a dict format
+            # Send game state and valid actions
+            dict_state = state.dict() if isinstance(state, BaseModel) else state  # Ensure state is serialized properly
             dict_state['idx_player_you'] = idx_player_you
             dict_state['list_action'] = [
-                action.model_dump() if hasattr(action, "model_dump") else action
+                action.dict() if isinstance(action, BaseModel) else action
                 for action in game.get_list_action()
             ]
 
-            data = {'type': 'update', 'state': dict_state}
-            await websocket.send_json(data)
+            await websocket.send_json({'type': 'update', 'state': dict_state})
 
+            # Wait for user action
             data = await websocket.receive_json()
             if data['type'] == 'action':
-                action = dog.Action.model_validate(data['action'])
+                action = dog.Action(**data['action'])
                 game.apply_action(action)
 
     except WebSocketDisconnect:
         print('DISCONNECTED')
+
 
 
