@@ -13,9 +13,9 @@ sys.stdout.reconfigure(encoding='utf-8')
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 
-from server.py.dog import Card, Marble, PlayerState, Action, GameState, GamePhase
+from server.py.dog import Dog, Card, Marble, PlayerState, Action, GameState, GamePhase
 
-class DogBenchmark(benchmark.Benchmark):
+class DogBenchmark():
 
     CNT_PLAYERS = 4
     CNT_STEPS = 64
@@ -25,8 +25,8 @@ class DogBenchmark(benchmark.Benchmark):
 
     def test_initial_game_state_values(self) -> None:
         """Test 001: Validate values of initial game state (cnt_round=1) [5 points]"""
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         assert state.phase == GamePhase.RUNNING, f'{state}Error: "phase" must be gamePhase.RUNNING initially'
         assert state.cnt_round == 1, f'{state}Err3or: "cnt_round" must be 1 initially'
@@ -47,7 +47,7 @@ class DogBenchmark(benchmark.Benchmark):
         """Test 002: Validate values of later game state (cnt_round=2) [5 points]"""
         self.start_game_state_at_round_2()
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
 
         assert state.cnt_round > 0, f'{state}Error: "cnt_round" must be > 0'
         assert len(state.list_card_draw) < 86, f'{state}Error: len("list_card_draw") must be < 86'
@@ -61,8 +61,8 @@ class DogBenchmark(benchmark.Benchmark):
 
     def test_get_list_action_without_start_cards(self)-> None:
         """Test 003: Test get_list_action without start-cards [1 point]"""
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -71,10 +71,10 @@ class DogBenchmark(benchmark.Benchmark):
         state.bool_card_exchanged = True
         player = state.list_player[idx_player_active]
         player.list_card = [Card(suit='♣', rank='3'), Card(suit='♦', rank='9'), Card(suit='♣', rank='10'), Card(suit='♥', rank='Q'), Card(suit='♠', rank='7'), Card(suit='♣', rank='J')]
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state = str(state)
 
-        list_action_found = self.game_server.get_list_action()
+        list_action_found = self.game.get_list_action()
         list_action_expected = []
 
         hint = str_state
@@ -91,8 +91,8 @@ class DogBenchmark(benchmark.Benchmark):
         list_card = [Card(suit='♦', rank='A'), Card(suit='♥', rank='K'), Card(suit='', rank='JKR')]
 
         for card in list_card:
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             idx_player_active = 0
             state.cnt_round = 0
@@ -101,10 +101,10 @@ class DogBenchmark(benchmark.Benchmark):
             state.bool_card_exchanged = True
             player = state.list_player[idx_player_active]
             player.list_card = [Card(suit='♣', rank='10'), Card(suit='♥', rank='Q'), Card(suit='♠', rank='7'), Card(suit='♣', rank='J'), card]
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
             action = Action(card=card, pos_from=64, pos_to=0)
 
             hint = str_state
@@ -116,8 +116,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_get_list_action_with_three_start_cards(self):
         """Test 005: Test get_list_action with three start-cards [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -126,10 +126,10 @@ class DogBenchmark(benchmark.Benchmark):
         state.bool_card_exchanged = True
         player = state.list_player[idx_player_active]
         player.list_card = [Card(suit='♣', rank='10'), Card(suit='♦', rank='A'), Card(suit='♠', rank='2'), Card(suit='♥', rank='K'), Card(suit='♠', rank='7'), Card(suit='♥', rank='A')]
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state = str(state)
 
-        list_action = self.game_server.get_list_action()
+        list_action = self.game.get_list_action()
         list_action_found = self.get_sorted_list_action(list_action)
         list_action_expected = self.get_sorted_list_action([
             Action(card=Card(suit='♦', rank='A'), pos_from=64, pos_to=0),
@@ -152,8 +152,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_move_out_of_kennel_1(self):
         """Test 006: Test move out of kennel without marble on start [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -162,14 +162,14 @@ class DogBenchmark(benchmark.Benchmark):
         state.bool_card_exchanged = True
         player = state.list_player[idx_player_active]
         player.list_card = [Card(suit='♦', rank='A'), Card(suit='♣', rank='10')]
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state_1 = str(state)
 
         action = Action(card=Card(suit='♦', rank='A'), pos_from=64, pos_to=0)
-        self.game_server.apply_action(action)
+        self.game.apply_action(action)
         str_action = f'Action: {action}\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_state_2 = str(state)
 
         marble_found = False
@@ -191,8 +191,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_move_out_of_kennel_2(self):
         """Test 007: Test move out of kennel with self-blocking on start [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -203,10 +203,10 @@ class DogBenchmark(benchmark.Benchmark):
         player.list_card = [Card(suit='♦', rank='A')]
         player.list_marble[0].pos = 0
         player.list_marble[0].is_save = True
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state = str(state)
 
-        list_action = self.game_server.get_list_action()
+        list_action = self.game.get_list_action()
         list_action_found = [action for action in list_action if action.pos_from >= 64 and action.pos_from < 68]
         list_action_expected = []
 
@@ -218,8 +218,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_move_out_of_kennel_3(self):
         """Test 008: Test move out of kennel with oponent on start [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -231,10 +231,10 @@ class DogBenchmark(benchmark.Benchmark):
         player2 = state.list_player[idx_player_active + 1]
         player2.list_marble[0].pos = 0
         player2.list_marble[0].is_save = False
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state_1 = str(state)
 
-        list_action_found = self.game_server.get_list_action()
+        list_action_found = self.game.get_list_action()
         action = Action(card=Card(suit='♦', rank='A'), pos_from=64, pos_to=0)
         list_action_expected = [action]
 
@@ -242,10 +242,10 @@ class DogBenchmark(benchmark.Benchmark):
         hint += f'Error: "get_list_action" must return {len(list_action_expected)} not {len(list_action_found)} actions'
         assert len(list_action_found) == len(list_action_expected), hint
 
-        self.game_server.apply_action(action)
+        self.game.apply_action(action)
         str_action = f'Action: {action}\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_state_2 = str(state)
 
         player = state.list_player[idx_player_active]
@@ -398,8 +398,8 @@ class DogBenchmark(benchmark.Benchmark):
         list_card = [Card(suit='♣', rank='J'), Card(suit='♦', rank='J'), Card(suit='♥', rank='J'), Card(suit='♠', rank='J')]
 
         for card in list_card:
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             idx_player_active = 0
             state.cnt_round = 0
@@ -416,10 +416,10 @@ class DogBenchmark(benchmark.Benchmark):
                 marble.pos = idx_player * 16 + 1
                 marble.is_save = False
 
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
             list_action_expected = [
                 Action(card=card, pos_from=0, pos_to=17),
                 Action(card=card, pos_from=0, pos_to=33),
@@ -439,10 +439,10 @@ class DogBenchmark(benchmark.Benchmark):
             hint += f'Error 1: "get_list_action" must return {len(list_action_expected)} not {len(list_action_found)} actions'
             hint += f'\nExpected actions:'
             for action in list_action_expected:
-                hint += f'\n - {action}'
+                    hint += f'\n - {action}'
             hint += f'\nFound actions:'
             for action in list_action_found:
-                hint += f'\n - {action}'
+                    hint += f'\n - {action}'
             assert len(list_action_found) == len(list_action_expected), hint
 
             hint = str_state
@@ -460,8 +460,8 @@ class DogBenchmark(benchmark.Benchmark):
         list_card = [Card(suit='♣', rank='J'), Card(suit='♦', rank='J'), Card(suit='♥', rank='J'), Card(suit='♠', rank='J')]
 
         for card in list_card:
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             idx_player_active = 0
             state.cnt_round = 0
@@ -478,15 +478,11 @@ class DogBenchmark(benchmark.Benchmark):
                     marble.pos = idx_player * 16 + 1
                     marble.is_save = True
 
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state = str(state)
 
-            list_action_found = self.game_server.get_list_action()
-
-            # TODO: Remove list_action_expected_2 for next semester
-
-            list_action_expected = []
-            list_action_expected_2 = [  # acceped too, as we won't change the logic anymore
+            list_action_found = self.game.get_list_action()
+            list_action_expected = [
                 Action(card=card, pos_from=0, pos_to=1),
                 Action(card=card, pos_from=1, pos_to=0)
             ]
@@ -499,11 +495,7 @@ class DogBenchmark(benchmark.Benchmark):
             hint += f'\nFound actions:'
             for action in list_action_found:
                     hint += f'\n - {action}'
-            if len(list_action_found) == len(list_action_expected_2):
-                print('WARNING')
-                print(hint)
-            else:
-                assert len(list_action_found) == len(list_action_expected), hint
+            assert len(list_action_found) == len(list_action_expected), hint
 
             hint = str_state
             hint += 'Error 2: "get_list_action" result is wrong'
@@ -511,13 +503,8 @@ class DogBenchmark(benchmark.Benchmark):
             hint += f'\n{self.get_list_action_as_str(list_action_expected)}'
             hint += f'\nFound:'
             hint += f'\n{self.get_list_action_as_str(list_action_found)}'
-            hint += f'\nHint: Own marbles can\'t be swapped'
-            if len(list_action_found) == len(list_action_expected_2):
-                print('WARNING')
-                print(hint)
-            else:
-                assert self.get_sorted_list_action(list_action_found) == self.get_sorted_list_action(list_action_expected), hint
-
+            hint += f'\nHint: Oponents that are save on start can not be swaped'
+            assert self.get_sorted_list_action(list_action_found) == self.get_sorted_list_action(list_action_expected), hint
 
     def test_swap_with_JAKE_3(self):
         """Test 023: Test swap action with card JAKE and oponents [1 point]"""
@@ -525,8 +512,8 @@ class DogBenchmark(benchmark.Benchmark):
         list_card = [Card(suit='♣', rank='J'), Card(suit='♦', rank='J'), Card(suit='♥', rank='J'), Card(suit='♠', rank='J')]
 
         for card in list_card:
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             idx_player_active = 0
             state.cnt_round = 0
@@ -543,14 +530,14 @@ class DogBenchmark(benchmark.Benchmark):
                 marble.pos = idx_player * 16 + 1
                 marble.is_save = False
 
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state_1 = str(state)
 
             action = Action(card=card, pos_from=0, pos_to=17)
-            self.game_server.apply_action(action)
+            self.game.apply_action(action)
             str_action = f'Action: {action}\n'
 
-            state = self.game_server.get_state()
+            state = self.game.get_state()
             str_state_2 = str(state)
 
             player1 = state.list_player[idx_player_active]
@@ -568,8 +555,8 @@ class DogBenchmark(benchmark.Benchmark):
         list_card = [Card(suit='♣', rank='J'), Card(suit='♦', rank='J'), Card(suit='♥', rank='J'), Card(suit='♠', rank='J')]
 
         for card in list_card:
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             idx_player_active = 0
             state.cnt_round = 0
@@ -586,10 +573,10 @@ class DogBenchmark(benchmark.Benchmark):
                     marble.pos = idx_player * 16 + 1
                     marble.is_save = True
 
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
             action = Action(card=card, pos_from=0, pos_to=1)
 
             hint = str_state
@@ -603,8 +590,8 @@ class DogBenchmark(benchmark.Benchmark):
         LIST_SUIT: List[str] = ['♠', '♥', '♦', '♣']
 
         for card in list_card:
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             idx_player_active = 0
             state.cnt_round = 0
@@ -613,10 +600,10 @@ class DogBenchmark(benchmark.Benchmark):
             state.bool_card_exchanged = True
             player = state.list_player[idx_player_active]
             player.list_card = [Card(suit='', rank='JKR')]
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
             list_action_expected = [
                 Action(card=Card(suit='', rank='JKR'), pos_from=64, pos_to=0),
             ]
@@ -645,8 +632,8 @@ class DogBenchmark(benchmark.Benchmark):
         LIST_SUIT: List[str] = ['♠', '♥', '♦', '♣']
 
         for card in list_card:
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             idx_player_active = 0
             state.cnt_round = 0
@@ -662,10 +649,10 @@ class DogBenchmark(benchmark.Benchmark):
                 marble = player.list_marble[1]
                 marble.pos = idx_player * 16 + 1
                 marble.is_save = False
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
             list_action_expected = []
             for suit in LIST_SUIT:
                 list_action_expected.extend([
@@ -698,8 +685,8 @@ class DogBenchmark(benchmark.Benchmark):
         list_card = [Card(suit='♦', rank='A'), Card(suit='♥', rank='K'), Card(suit='', rank='JKR')]
 
         for card in list_card:
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             idx_player_active = 0
             state.cnt_round = 0
@@ -708,10 +695,10 @@ class DogBenchmark(benchmark.Benchmark):
             state.bool_card_exchanged = True
             player = state.list_player[idx_player_active]
             player.list_card = [Card(suit='♣', rank='10'), Card(suit='♥', rank='Q'), Card(suit='♠', rank='7'), Card(suit='♣', rank='J'), card]
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
             action = Action(card=card, pos_from=64, pos_to=0)
 
             hint = str_state
@@ -723,8 +710,8 @@ class DogBenchmark(benchmark.Benchmark):
 
         card_swap = Card(suit='♥', rank='A')
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -733,14 +720,14 @@ class DogBenchmark(benchmark.Benchmark):
         state.bool_card_exchanged = True
         player = state.list_player[idx_player_active]
         player.list_card = [Card(suit='', rank='JKR'), Card(suit='♠', rank='K')]
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state_1 = str(state)
 
         action = Action(card=Card(suit='', rank='JKR'), pos_from=None, pos_to=None, card_swap=card_swap)
-        self.game_server.apply_action(action)
+        self.game.apply_action(action)
         str_action = f'Action: {action}\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_state_2 = str(state)
 
         hint = str_state_1 + str_action + str_state_2
@@ -751,7 +738,7 @@ class DogBenchmark(benchmark.Benchmark):
         hint += f'Error 2: "idx_player_active" must be same after JKR was played for other card.'
         assert state.idx_player_active == idx_player_active, hint
 
-        list_action_found = self.game_server.get_list_action()
+        list_action_found = self.game.get_list_action()
         action = Action(card=Card(suit='♠', rank='K'), pos_from=64, pos_to=0)
 
         hint = str_state_1 + str_action + str_state_2
@@ -763,8 +750,8 @@ class DogBenchmark(benchmark.Benchmark):
 
         card_swap = Card(suit='♥', rank='A')
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -773,14 +760,14 @@ class DogBenchmark(benchmark.Benchmark):
         state.bool_card_exchanged = True
         player = state.list_player[idx_player_active]
         player.list_card = [Card(suit='', rank='JKR'), Card(suit='', rank='JKR')]
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state_1 = str(state)
 
         action = Action(card=Card(suit='', rank='JKR'), pos_from=None, pos_to=None, card_swap=card_swap)
-        self.game_server.apply_action(action)
+        self.game.apply_action(action)
         str_action = f'Action: {action}\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_state_2 = str(state)
 
         player = state.list_player[idx_player_active]
@@ -813,8 +800,8 @@ class DogBenchmark(benchmark.Benchmark):
 
             for steps_split in list_steps_split:
 
-                self.game_server.reset()
-                state = self.game_server.get_state()
+                self.game = Dog()
+                state = self.game.get_state()
 
                 pos_from = 0
                 card_seven_steps_remaining = 7
@@ -829,13 +816,13 @@ class DogBenchmark(benchmark.Benchmark):
                 marble = player.list_marble[0]
                 marble.pos = pos_from
                 marble.is_save = True
-                self.game_server.set_state(state)
+                self.game.set_state(state)
                 str_states = str(state)
 
                 for steps in steps_split:
 
                     if card_seven_steps_remaining < 7:
-                        list_action_found = self.game_server.get_list_action()
+                        list_action_found = self.game.get_list_action()
                         is_okay = True
                         for action in list_action_found:
                             is_okay = is_okay and action.card in list_card
@@ -845,12 +832,12 @@ class DogBenchmark(benchmark.Benchmark):
 
                     pos_to = (pos_from + steps + self.CNT_STEPS) % self.CNT_STEPS
                     action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-                    self.game_server.apply_action(action)
+                    self.game.apply_action(action)
                     str_states += f'Action: {action}\n'
 
                     card_seven_steps_remaining -= steps
 
-                    state = self.game_server.get_state()
+                    state = self.game.get_state()
                     str_states += str(state)
 
                     found = False
@@ -898,8 +885,8 @@ class DogBenchmark(benchmark.Benchmark):
 
             for steps_split in list_steps_split:
 
-                self.game_server.reset()
-                state = self.game_server.get_state()
+                self.game = Dog()
+                state = self.game.get_state()
 
                 pos_from_1 = 0
                 pos_from_2 = 12
@@ -917,7 +904,7 @@ class DogBenchmark(benchmark.Benchmark):
                 marble = player.list_marble[1]
                 marble.pos = pos_from_2
                 marble.is_save = False
-                self.game_server.set_state(state)
+                self.game.set_state(state)
                 str_states = str(state)
 
                 for i, steps in enumerate(steps_split):
@@ -925,12 +912,12 @@ class DogBenchmark(benchmark.Benchmark):
                     pos_from = pos_from_1 if i % 2 == 0 else pos_from_2
                     pos_to = (pos_from + steps + self.CNT_STEPS) % self.CNT_STEPS
                     action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-                    self.game_server.apply_action(action)
+                    self.game.apply_action(action)
                     str_states += f'Action: {action}\n'
 
                     card_seven_steps_remaining -= steps
 
-                    state = self.game_server.get_state()
+                    state = self.game.get_state()
                     str_states += str(state)
 
                     player = state.list_player[idx_player_active]
@@ -962,8 +949,8 @@ class DogBenchmark(benchmark.Benchmark):
 
             for steps in list_steps:
 
-                self.game_server.reset()
-                state = self.game_server.get_state()
+                self.game = Dog()
+                state = self.game.get_state()
 
                 pos_from = 0
                 pos_oponent = pos_from + steps - 1 if steps > 1 else pos_from + 1
@@ -982,15 +969,15 @@ class DogBenchmark(benchmark.Benchmark):
                 marble = player.list_marble[0]
                 marble.pos = pos_oponent
                 marble.is_save = False
-                self.game_server.set_state(state)
+                self.game.set_state(state)
                 str_states = str(state)
 
                 pos_to = (pos_from + steps + self.CNT_STEPS) % self.CNT_STEPS
                 action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-                self.game_server.apply_action(action)
+                self.game.apply_action(action)
                 str_states += f'Action: {action}\n'
 
-                state = self.game_server.get_state()
+                state = self.game.get_state()
                 str_states += str(state)
 
                 player = state.list_player[idx_player_active]
@@ -1018,8 +1005,8 @@ class DogBenchmark(benchmark.Benchmark):
 
             for steps in list_steps:
 
-                self.game_server.reset()
-                state = self.game_server.get_state()
+                self.game = Dog()
+                state = self.game.get_state()
 
                 pos_from = 0
                 pos_own = pos_from + steps - 1 if steps > 1 else pos_from + 1
@@ -1036,15 +1023,15 @@ class DogBenchmark(benchmark.Benchmark):
                 marble = player.list_marble[1]
                 marble.pos = pos_own
                 marble.is_save = False
-                self.game_server.set_state(state)
+                self.game.set_state(state)
                 str_states = str(state)
 
                 pos_to = (pos_from + steps + self.CNT_STEPS) % self.CNT_STEPS
                 action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-                self.game_server.apply_action(action)
+                self.game.apply_action(action)
                 str_states += f'Action: {action}\n'
 
-                state = self.game_server.get_state()
+                state = self.game.get_state()
                 str_states += str(state)
 
                 player = state.list_player[idx_player_active]
@@ -1072,8 +1059,8 @@ class DogBenchmark(benchmark.Benchmark):
 
         for card in list_card:
 
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             pos_blocked = 16
             pos_from = pos_blocked - sum(list_steps[:-1]) - 1
@@ -1094,7 +1081,7 @@ class DogBenchmark(benchmark.Benchmark):
             marble = player.list_marble[1]
             marble.pos = pos_blocked - 1
             marble.is_save = False
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_states = str(state)
 
             for i, steps in enumerate(list_steps):
@@ -1102,20 +1089,20 @@ class DogBenchmark(benchmark.Benchmark):
                 if i < len(list_steps) - 1:  # before last step
                     pos_to = (pos_from + steps + self.CNT_STEPS) % self.CNT_STEPS
                     action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-                    self.game_server.apply_action(action)
+                    self.game.apply_action(action)
                     str_states += f'Action: {action}\n'
                 else:  # last step
-                    list_action_found = self.game_server.get_list_action()
+                    list_action_found = self.game.get_list_action()
 
                     hint = str_states
                     hint += 'Error 1: "get_list_action" must be empty.'
                     hint += f'\nHint: Player 1 can not play all steps with card {card}.'
                     assert len(list_action_found) == 0, hint
 
-                    self.game_server.apply_action(None)
+                    self.game.apply_action(None)
                     str_states += f'Action: None\n'
 
-                    state = self.game_server.get_state()
+                    state = self.game.get_state()
                     str_states += str(state)
 
                     # assert game state is reset
@@ -1157,8 +1144,8 @@ class DogBenchmark(benchmark.Benchmark):
 
         for card in list_card:
 
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             pos_from = 13
             card_seven_steps_remaining = 7
@@ -1173,19 +1160,19 @@ class DogBenchmark(benchmark.Benchmark):
             marble = player.list_marble[0]
             marble.pos = pos_from
             marble.is_save = False
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_states = str(state)
 
             for steps in steps_split:
 
                 pos_to = 77 if steps == 5 else 79
                 action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-                self.game_server.apply_action(action)
+                self.game.apply_action(action)
                 str_states += f'Action: {action}\n'
 
                 card_seven_steps_remaining -= steps
 
-                state = self.game_server.get_state()
+                state = self.game.get_state()
                 str_states += str(state)
 
                 found = False
@@ -1217,8 +1204,8 @@ class DogBenchmark(benchmark.Benchmark):
 
         for card in list_card:
 
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             pos_from = 12
             card_seven_steps_remaining = 7
@@ -1232,25 +1219,25 @@ class DogBenchmark(benchmark.Benchmark):
             marble = player.list_marble[0]
             marble.pos = pos_from
             marble.is_save = False
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_states = str(state)
 
             for steps in steps_split:
 
                 if steps == 2:
-                    list_action_found = self.game_server.get_list_action()
+                    list_action_found = self.game.get_list_action()
                     hint = str_states
                     hint += f'Error: Too many steps possible in finish.'
                     assert len(list_action_found) == 2, hint
 
                 pos_to = 76 if steps == 5 else 78
                 action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-                self.game_server.apply_action(action)
+                self.game.apply_action(action)
                 str_states += f'Action: {action}\n'
 
                 card_seven_steps_remaining -= steps
 
-                state = self.game_server.get_state()
+                state = self.game.get_state()
                 str_states += str(state)
 
                 pos_from = pos_to
@@ -1258,8 +1245,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_overtake_save_marble_1(self) -> None:
         """Test 036: Test to overtake own marble on save start [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         card = Card(suit='♣', rank='5')
         idx_player_active = 0
@@ -1273,10 +1260,10 @@ class DogBenchmark(benchmark.Benchmark):
         player.list_marble[0].is_save = False
         player.list_marble[1].pos = 0
         player.list_marble[1].is_save = True
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state = str(state)
 
-        list_action_found = self.game_server.get_list_action()
+        list_action_found = self.game.get_list_action()
         list_action_expected = [
             Action(card=Card(suit='♣', rank='5'), pos_from=0, pos_to=5)
         ]
@@ -1293,8 +1280,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_overtake_save_marble_2(self) -> None:
         """Test 037: Test to overtake oponents marble on save start [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         card = Card(suit='♣', rank='5')
         idx_player_active = 0
@@ -1309,10 +1296,10 @@ class DogBenchmark(benchmark.Benchmark):
         player = state.list_player[idx_player_active + 1]
         player.list_marble[1].pos = 16
         player.list_marble[1].is_save = True
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state = str(state)
 
-        list_action_found = self.game_server.get_list_action()
+        list_action_found = self.game.get_list_action()
         list_action_expected = []
 
         hint = str_state
@@ -1601,17 +1588,17 @@ class DogBenchmark(benchmark.Benchmark):
     def test_card_exchange_at_beginning_of_round_1(self):
         """Test 044: Test card exchange actions at beginning of round [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
         state.idx_player_started = idx_player_active
         state.idx_player_active = idx_player_active
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state = str(state)
 
-        list_action_found = self.game_server.get_list_action()
+        list_action_found = self.game.get_list_action()
         list_action_expected = []
 
         player = state.list_player[idx_player_active]
@@ -1631,14 +1618,14 @@ class DogBenchmark(benchmark.Benchmark):
     def test_card_exchange_at_beginning_of_round_2(self):
         """Test 045: Test card exchange result at beginning of round [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
         state.idx_player_started = idx_player_active
         state.idx_player_active = idx_player_active
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_states = str(state)
 
         list_card = []
@@ -1646,10 +1633,10 @@ class DogBenchmark(benchmark.Benchmark):
             card = player.list_card[0]  # first card
             list_card.append(card)
             action = Action(card=card, pos_from=None, pos_to=None)
-            self.game_server.apply_action(action)
+            self.game.apply_action(action)
             str_states += f'Action: {action}\n'
 
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_states += str(state)
 
         is_okay = True
@@ -1667,8 +1654,8 @@ class DogBenchmark(benchmark.Benchmark):
 
     def test_number_of_cards_in_round_1(self):
         """Test 046: Test number of cards dealt in round 1 [1 point]"""
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
         str_state = str(state)
         for idx_player in range(self.CNT_PLAYERS):
             cnt_cards_found = len(state.list_player[idx_player].list_card)
@@ -1681,7 +1668,7 @@ class DogBenchmark(benchmark.Benchmark):
         """Test 047: Test number of cards dealt in round 2 [1 point]"""
         self.start_game_state_at_round_2()
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_state = str(state)
 
         for idx_player in range(self.CNT_PLAYERS):
@@ -1693,9 +1680,9 @@ class DogBenchmark(benchmark.Benchmark):
 
     def test_number_of_cards_in_round_5(self):
         """Test 048: Test number of cards dealt in round 5 [1 point]"""
-        self.game_server.reset()
+        self.game = Dog()
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 4
@@ -1703,14 +1690,14 @@ class DogBenchmark(benchmark.Benchmark):
         state.bool_card_exchanged = True
         for idx_player in range(self.CNT_PLAYERS):
             state.list_player[idx_player].list_card = []
-        self.game_server.set_state(state)
+        self.game.set_state(state)
 
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_state = str(state)
 
         for idx_player in range(self.CNT_PLAYERS):
@@ -1723,9 +1710,9 @@ class DogBenchmark(benchmark.Benchmark):
 
     def test_number_of_cards_in_round_6(self):
         """Test 049: Test number of cards dealt in round 6 [1 point]"""
-        self.game_server.reset()
+        self.game = Dog()
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 5
@@ -1733,14 +1720,14 @@ class DogBenchmark(benchmark.Benchmark):
         state.bool_card_exchanged = True
         for idx_player in range(self.CNT_PLAYERS):
             state.list_player[idx_player].list_card = []
-        self.game_server.set_state(state)
+        self.game.set_state(state)
 
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_state = str(state)
 
         for idx_player in range(self.CNT_PLAYERS):
@@ -1753,22 +1740,22 @@ class DogBenchmark(benchmark.Benchmark):
 
     def test_stock_out_of_cards(self):
         """Test 050: Test re-shuffle if stock out of cards [1 point]"""
-        self.game_server.reset()
+        self.game = Dog()
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
 
         state.list_card_discard.extend(state.list_card_draw)
         state.list_card_discard.append(Card(suit='♥', rank='A'))  # additional card was discarded after JKR
         state.list_card_draw = []
 
-        self.game_server.set_state(state)
+        self.game.set_state(state)
 
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_state = str(state)
 
         cnt_cards = len(state.list_card_draw)
@@ -1786,8 +1773,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_folding_cards(self):
         """Test 051: Test folding cards when no action possible [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -1798,13 +1785,13 @@ class DogBenchmark(benchmark.Benchmark):
         player.list_card = [Card(suit='♥', rank='2'), Card(suit='♠', rank='10'), Card(suit='♦', rank='4')]
         player = state.list_player[idx_player_active + 1]
         player.list_card = [Card(suit='♥', rank='A')]
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_states = str(state)
 
-        self.game_server.apply_action(None)
+        self.game.apply_action(None)
         str_states += f'Action: None\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_states += str(state)
 
         player = state.list_player[idx_player_active]
@@ -1819,8 +1806,8 @@ class DogBenchmark(benchmark.Benchmark):
         card = Card(suit='♣', rank='5')
         for idx_player in range(4):
 
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             state.idx_player_started = idx_player
             state.idx_player_active = idx_player
@@ -1838,10 +1825,10 @@ class DogBenchmark(benchmark.Benchmark):
             player.list_marble[0].pos = pos_start
             player.list_marble[0].is_save = False
 
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_states = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
 
             hint = str_states
             hint += f'Error 1: Player {idx_player+1} must allowed to move with Player {idx_partner+1}\'s marbles'
@@ -1850,10 +1837,10 @@ class DogBenchmark(benchmark.Benchmark):
 
             pos_to = pos_start + 5
             action = Action(card=card, pos_from=pos_start, pos_to=pos_to)
-            self.game_server.apply_action(action)
+            self.game.apply_action(action)
             str_states += f'Action: None\n'
 
-            state = self.game_server.get_state()
+            state = self.game.get_state()
             str_states += str(state)
 
             player = state.list_player[idx_partner]
@@ -1867,8 +1854,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_unique_actions(self):
         """Test 053: Test if list_action contains unique actions [2 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -1880,10 +1867,10 @@ class DogBenchmark(benchmark.Benchmark):
         player.list_card = [Card(suit='♣', rank='5'), Card(suit='♣', rank='5')]
         player.list_marble[0].pos = 0
 
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_state = str(state)
 
-        list_action_found = self.game_server.get_list_action()
+        list_action_found = self.game.get_list_action()
 
         hint = str_state
         hint += f'Error: List of actions contains duplicate actions.'
@@ -1892,8 +1879,8 @@ class DogBenchmark(benchmark.Benchmark):
     def test_finish_game(self):
         """Test 054: Test finish game [1 point]"""
 
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.cnt_round = 0
@@ -1911,14 +1898,14 @@ class DogBenchmark(benchmark.Benchmark):
         player.list_card = [Card(suit='♥', rank='A')]
         player.list_marble[0].pos = 0
 
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_states = str(state)
 
         action = Action(card=Card(suit='♥', rank='A'), pos_from=0, pos_to=68)
-        self.game_server.apply_action(action)
+        self.game.apply_action(action)
         str_states += f'Action: None\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_states += str(state)
 
         hint = str_states
@@ -1955,9 +1942,9 @@ class DogBenchmark(benchmark.Benchmark):
         return json.dumps([str(action) for action in list_action], indent=4, ensure_ascii=False)
 
     def start_game_state_at_round_2(self):
-        self.game_server.reset()
+        self.game = Dog()
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
 
         idx_player_started = 0
         state.idx_player_started = idx_player_started
@@ -1965,16 +1952,16 @@ class DogBenchmark(benchmark.Benchmark):
         state.bool_card_exchanged = True
         for idx_player in range(self.CNT_PLAYERS):
             state.list_player[idx_player].list_card = []
-        self.game_server.set_state(state)
+        self.game.set_state(state)
 
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
-        self.game_server.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
+        self.game.apply_action(None)
 
     def move_marble(self, card: str, pos_from: int, pos_to: int) -> None:
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.idx_player_started = idx_player_active
@@ -1984,14 +1971,14 @@ class DogBenchmark(benchmark.Benchmark):
         player.list_card = [card]
         player.list_marble[0].pos = pos_from
         player.list_marble[0].is_save = True
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_states = str(state)
 
         action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-        self.game_server.apply_action(action)
+        self.game.apply_action(action)
         str_states += f'Action: {action}\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_states += str(state)
 
         player = state.list_player[idx_player_active]
@@ -2008,8 +1995,8 @@ class DogBenchmark(benchmark.Benchmark):
 
         for is_save in list_is_save:
 
-            self.game_server.reset()
-            state = self.game_server.get_state()
+            self.game = Dog()
+            state = self.game.get_state()
 
             state.idx_player_started = idx_player
             state.idx_player_active = idx_player
@@ -2018,10 +2005,10 @@ class DogBenchmark(benchmark.Benchmark):
             player.list_card = [card]
             player.list_marble[0].pos = pos_from
             player.list_marble[0].is_save = is_save
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_states = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
             action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
 
             if is_save:
@@ -2039,10 +2026,10 @@ class DogBenchmark(benchmark.Benchmark):
                     hint += f'\nAction missing: {action}'
                     assert action in list_action_found, hint
 
-                    self.game_server.apply_action(action)
+                    self.game.apply_action(action)
                     str_states += f'Action: {action}\n'
 
-                    state = self.game_server.get_state()
+                    state = self.game.get_state()
                     str_states += str(state)
 
                     player = state.list_player[idx_player]
@@ -2059,8 +2046,8 @@ class DogBenchmark(benchmark.Benchmark):
                     assert action not in list_action_found, hint
 
     def move_marble_to_blocked_finish(self, card: str, pos_from: int, pos_to: int, idx_player: int) -> None:
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         for offset in [0, 1]:
             state.idx_player_started = idx_player
@@ -2072,10 +2059,10 @@ class DogBenchmark(benchmark.Benchmark):
             player.list_marble[0].is_save = False
             player.list_marble[1].pos = pos_to - offset
             player.list_marble[1].is_save = False
-            self.game_server.set_state(state)
+            self.game.set_state(state)
             str_state = str(state)
 
-            list_action_found = self.game_server.get_list_action()
+            list_action_found = self.game.get_list_action()
             action = Action(card=card, pos_from=pos_from, pos_to=pos_to - offset)
 
             hint = str_state
@@ -2088,8 +2075,8 @@ class DogBenchmark(benchmark.Benchmark):
             assert action not in list_action_found, hint
 
     def overtake_marble(self, card: str, pos_from: int, pos_to: int) -> None:
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.idx_player_started = idx_player_active
@@ -2103,14 +2090,14 @@ class DogBenchmark(benchmark.Benchmark):
         player.list_card = [card]
         player.list_marble[0].pos = pos_from + 1
         player.list_marble[0].is_save = False
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_states = str(state)
 
         action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-        self.game_server.apply_action(action)
+        self.game.apply_action(action)
         str_states += f'Action: {action}\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_states += str(state)
 
         player = state.list_player[idx_player_active + 1]
@@ -2120,8 +2107,8 @@ class DogBenchmark(benchmark.Benchmark):
         assert found, hint
 
     def send_home_marble(self, card: str, pos_from: int, pos_to: int, is_own_marble: bool) -> None:
-        self.game_server.reset()
-        state = self.game_server.get_state()
+        self.game = Dog()
+        state = self.game.get_state()
 
         idx_player_active = 0
         state.idx_player_started = idx_player_active
@@ -2138,14 +2125,14 @@ class DogBenchmark(benchmark.Benchmark):
             player = state.list_player[idx_player_active + 1]
             player.list_marble[0].pos = pos_to
             player.list_marble[0].is_save = False
-        self.game_server.set_state(state)
+        self.game.set_state(state)
         str_states = str(state)
 
         action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
-        self.game_server.apply_action(action)
+        self.game.apply_action(action)
         str_states += f'Action: {action}\n'
 
-        state = self.game_server.get_state()
+        state = self.game.get_state()
         str_states += str(state)
 
         if is_own_marble:
@@ -2180,20 +2167,35 @@ class DogBenchmark(benchmark.Benchmark):
                 for is_own_marble in [True, False]:
                     self.send_home_marble(card=card, pos_from=pos_from, pos_to=pos_to, is_own_marble=is_own_marble)
 
+#============================================================================ Benchmark===========================================
 
-if __name__ == '__main__':
+import inspect
 
-    if len(sys.argv) < 3:
-        print("Error: Wrong number of arguments")
-        print("Use: python benchmark_dog_copy.py python [dog.Dog]")
-        print("  or python benchmark_dog_copy.py localhost [port]")
-        print("  or python benchmark_dog_copy.py remote [host:port]")
-        sys.exit()
+def run_all_tests():
+    # Erzeuge eine Instanz der Testklasse
+    benchmark = DogBenchmark()
 
-    benchmark = DogBenchmark(argv=sys.argv)
+    # Liste alle Methoden der Klasse auf
+    methods = inspect.getmembers(benchmark, predicate=inspect.ismethod)
+    print("\n"+"*"*100+"\n")
 
-    if True:  # Run all tests
-        benchmark.run_tests()
+    for method_name, method in methods:
+        if method_name.startswith("test_"):
+            docstring = method.__doc__ or "Keine Beschreibung vorhanden."
 
-    else:  # Run specific test(s)
-        benchmark.test_chose_card_with_JOKER_1()
+            if "042" in method_name:
+                print("test")
+                
+            print(f"Ausfuehren des Tests: {method_name}")
+            print(f"Beschreibung: {docstring.strip()}")
+
+            try:
+                method()
+                print(f"Test {method_name} erfolgreich abgeschlossen.\n")
+            except AssertionError as e:
+                print(f"Test {method_name} fehlgeschlagen: {e}\n")
+
+            print("\n"+"*"*100+"\n")
+
+if __name__ == "__main__":
+    run_all_tests()

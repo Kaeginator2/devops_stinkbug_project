@@ -677,9 +677,50 @@ class TestListPossibleAction:
 
 class TestDog:
 
-# Marc: Platzhalter 2
+    def test_set_state(self):
+        # Arrange
+        game = Dog()  # Erstelle eine Instanz
+        new_state = Dog()
+        new_state.cnt_round = 3
+        new_state.phase = GamePhase.RUNNING
+        new_state.idx_player_active = 2
 
-# Marc: Platzhalter 1
+        # Act
+        game.set_state(new_state)
+
+        # Assert: Positive Checks
+        assert game.state.cnt_round == 3, "The round count should be 3"
+        assert game.state.phase == GamePhase.RUNNING, "The phase should be RUNNING"
+        assert game.state.idx_player_active == 2, "The active player index should be 2"
+
+        # Assert: Negative Checks
+        assert game.state.cnt_round != 2, "The round count should not be 2"
+        assert game.state.phase != GamePhase.FINISHED, "The phase should not be FINISHED"
+        assert game.state.idx_player_active != 1, "The active player index should not be 1"
+
+    def test_get_state(self):
+        # Arrange
+        game = Dog()  # Erstelle eine Instanz
+        new_state = Dog()
+        new_state.cnt_round = 3
+        new_state.phase = GamePhase.RUNNING
+        new_state.idx_player_active = 2
+
+        # Set new state
+        game.set_state(new_state)
+
+        # Act
+        returned_state = game.get_state()
+
+        # Assert: Positive Checks
+        assert returned_state.cnt_round == 3, "The round count should be 3"
+        assert returned_state.phase == GamePhase.RUNNING, "The phase should be RUNNING"
+        assert returned_state.idx_player_active == 2, "The active player index should be 2"
+
+        # Assert: Negative Checks
+        assert returned_state.cnt_round != 2, "The round count should not be 2"
+        assert returned_state.phase != GamePhase.FINISHED, "The phase should not be FINISHED"
+        assert returned_state.idx_player_active != 1, "The active player index should not be 1"
 
     def test_print_state(self, capfd):
         # Arrange
