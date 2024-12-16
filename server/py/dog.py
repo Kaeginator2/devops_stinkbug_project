@@ -31,12 +31,19 @@ class PlayerState(BaseModel):
     list_finish_pos: List[int]
     start_pos: int
 
-
 class Action(BaseModel):
     card: Card  # card to play
     pos_from: Optional[int]  # position to move the marble from
     pos_to: Optional[int]  # position to move the marble to
     card_swap: Optional[Card] = None  # optional card to swap ()
+
+    def __eq__(self, other) ->bool:
+        
+        pass
+
+    def __hash__(self):
+        # Kombiniere die Attribute zu einem Hash-Wert
+        return hash((self.card, self.pos_from, self.pos_to ,self.card_swap))
 
 
 class GamePhase(str, Enum):
@@ -664,11 +671,11 @@ class GameState(BaseModel):
         pos_to = action_to_check.pos_to
 
         # Calculate the movement for go Final
-        if startpos > 0 or pos_from > pos_to:
+        if startpos = 0 or pos_from > pos_to: # Normal case
             steps = pos_to - pos_from
             stepps_to_final = startpos-pos_from
             overlap = abs(abs(steps) - abs(stepps_to_final))
-        else:
+        else: # Special Case Startpos = 0 PlayerBlue
             steps = 64-pos_to-pos_from
             stepps_to_final = startpos-pos_from
             overlap = abs(abs(steps) - abs(stepps_to_final))
@@ -780,6 +787,7 @@ class Dog(Game):
         """
         Do the movement conected to the Action
         """
+
         if action is None: # If player can not play any actions
             self.state.discard_invalid_cards()
 
@@ -799,6 +807,9 @@ class Dog(Game):
             # Removed played Card from Players Hand
             self.state.list_card_discard.append(action.card)
             self.state.list_player[self.state.idx_player_active].list_card.remove(action.card)
+
+        
+
 
         # Sets the next Player active if there is not a Card active
         if self.state.card_active is None:
