@@ -2167,7 +2167,10 @@ class DogBenchmark():
                 for is_own_marble in [True, False]:
                     self.send_home_marble(card=card, pos_from=pos_from, pos_to=pos_to, is_own_marble=is_own_marble)
 
+#============================================================================ Benchmark===========================================
+
 import inspect
+
 def run_all_tests():
     # Erzeuge eine Instanz der Testklasse
     benchmark = DogBenchmark()
@@ -2179,8 +2182,10 @@ def run_all_tests():
     for method_name, method in methods:
         if method_name.startswith("test_"):
             docstring = method.__doc__ or "Keine Beschreibung vorhanden."
+
             if "042" in method_name:
                 print("test")
+                
             print(f"Ausfuehren des Tests: {method_name}")
             print(f"Beschreibung: {docstring.strip()}")
 
