@@ -171,7 +171,7 @@ class GameState(BaseModel):
             if not selected_player.list_card:
                 continue
             else:
-                return
+                return 
         # Go to next Gameround
         self.cnt_round += 1
 
@@ -192,7 +192,7 @@ class GameState(BaseModel):
                 self.list_card_draw.remove(card)
 
         # Set Cardexchange
-        self.bool_card_exchanged = False      
+        self.bool_card_exchanged = False     
 
     def discard_invalid_cards(self) -> None:
         # check if player has cards
@@ -671,7 +671,7 @@ class GameState(BaseModel):
         pos_to = action_to_check.pos_to
 
         # Calculate the movement for go Final
-        if startpos = 0 or pos_from > pos_to: # Normal case
+        if startpos == 0 or pos_from > pos_to: # Normal case
             steps = pos_to - pos_from
             stepps_to_final = startpos-pos_from
             overlap = abs(abs(steps) - abs(stepps_to_final))
@@ -703,8 +703,10 @@ class GameState(BaseModel):
 
         if idx_next_player == self.idx_player_started:
             self.deal_cards()
-            self.idx_player_started = (self.idx_player_started + 1) % 4
-            self.idx_player_active = self.idx_player_started
+            if self.bool_card_exchanged:
+                self.idx_player_active = idx_next_player
+            else:
+                self.idx_player_started = (self.idx_player_started + 1) % 4
         else:
             self.idx_player_active = idx_next_player
 
