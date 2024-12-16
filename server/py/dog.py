@@ -214,7 +214,11 @@ class GameState(BaseModel):
             [7]
         ]
         active_player = self.list_player[self.idx_player_active]
-        cards = active_player.list_card
+        if self.card_active is not None:
+            cards = [self.card_active]
+        else:
+            cards = active_player.list_card
+
         if not cards:
             return []
 
@@ -555,9 +559,16 @@ class GameState(BaseModel):
 
         return action_list
 
+    def swap_joker_with_card(self, action: Action) -> None:
+        active_player = self.list_player[self.idx_player_active]
+        for idx, card in enumerate(active_player.list_card):
+            if card.suit == action.card.suit and card.rank == action.card.rank:
+                active_player.list_card[idx] = action.card_swap  # Überschreibe die JokcerKarte in der Liste
+                self.card_active = action.card_swap # Setze die getauschte Karte aktiv
 
 
-    def set_action_to_game(self, action: Action):  # kaegi
+
+    def set_action_to_game(self, action: Action)-> None:  # kaegi
         # Action is from the active Player
         # Set Action to the GameState ==> make movement on the "board"
         marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble if marble.pos == action.pos_from), None)
@@ -757,15 +768,9 @@ class Dog(Game):
             action_list = [Action(card=hand_card,pos_from=None, pos_to=None) for hand_card in self.state.list_player[self.state.idx_player_active].list_card]
             return action_list
         
-        if self.state.card_active is None:
-            action_list = self.state.get_list_possible_action()
+        action_list = self.state.get_list_possible_action()
 
         #if self.state.card_active.rank == '7':
-
-
-
-
-
 
         return action_list
 
@@ -781,6 +786,9 @@ class Dog(Game):
         # Check if exchange cards is needed
         elif self.state.bool_card_exchanged is False:
             self.state.exchange_cards(action)
+
+        elif action.card_swap is not None:
+            self.state.swap_joker_with_card(action)
 
         elif action:
             #if action.card.rank == '7':
