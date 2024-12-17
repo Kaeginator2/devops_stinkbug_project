@@ -39,14 +39,16 @@ class Action(BaseModel):
     pos_to: Optional[int]  # position to move the marble to
     card_swap: Optional[Card] = None  # optional card to swap ()
 
-    def __eq__(self, other) ->bool:
-        
-        pass
+    def __eq__(self, other: object) ->bool:
+        if not isinstance(other, Action):
+            return False
+        return (self.card==other.card and
+                self.pos_from == other.pos_from and
+                self.pos_to == other.pos_to and
+                self.card_swap == other.card_swap)
 
     def __hash__(self):
-        # Kombiniere die Attribute zu einem Hash-Wert
         return hash((self.card, self.pos_from, self.pos_to ,self.card_swap))
-
 
 class GamePhase(str, Enum):
     SETUP = 'setup'  # before the game has started
@@ -628,17 +630,30 @@ class GameState(BaseModel):
                 if p_marble.pos == moved_marble.pos and p_marble != moved_marble:
                     p_marble.pos = p_marble.start_pos
 
-
     def skip_save_marble(self, action: Action) -> bool:
         """
         Prüft, ob zwischen action.pos_from und action.pos_to sichere Murmeln liegen.
         Gibt False zurück, wenn eine sichere Murmel in diesem Bereich gefunden wird,
         andernfalls True.
         """
+
         for player in self.list_player:
             for marble in player.list_marble:
-                if action.pos_from < marble.pos <= action.pos_to and marble.is_save:
+                # Direkte Bewegung ohne Überlauf (z.B. 5 -> 10)
+                if action.pos_from < marble.pos < action.pos_to and marble.is_save:
                     return False
+
+                # Bewegung mit Überlauf (z.B. 63 -> 5)
+                elif action.pos_from > action.pos_to:
+                    if marble.is_save and (
+                            marble.pos > action.pos_from or marble.pos < action.pos_to or marble.pos == 0
+                    ):
+                        return False
+
+                # Blockierung bei Startposition (pos=0)
+                if marble.pos == 0 and marble.is_save and action.pos_from == 0:
+                    return False
+
         return True
 
     def is_player_finished(self, player: PlayerState) -> bool:
