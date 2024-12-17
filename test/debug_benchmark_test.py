@@ -7,8 +7,8 @@ import benchmark
 import importlib
 import json
 import traceback
-sys.stdout.reconfigure(encoding='utf-8')
 
+sys.stdout.reconfigure(encoding='utf-8')
 
 from pydantic import BaseModel
 from typing import List, Optional, Dict
@@ -2195,7 +2195,7 @@ def run_all_tests():
         if method_name.startswith("test_"):
             docstring = method.__doc__ or "Keine Beschreibung vorhanden."
 
-            if "002" not in docstring:
+            if "048" not in docstring:
                 continue
                 
             print(f"Ausfuehren des Tests: {method_name}")

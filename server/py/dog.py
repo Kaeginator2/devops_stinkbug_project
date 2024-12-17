@@ -10,12 +10,21 @@ if __name__ == '__main__':
     from game import Game, Player
 else:
     from server.py.game import Game, Player
+    # from game import Game, Player
+
 
 
 class Card(BaseModel):
     suit: str  # card suit (color)
     rank: str  # card rank
 
+    def __eq__(self, other: any) -> bool:
+        if not isinstance(other, Card):
+            return False
+        return self.suit == other.suit and self.rank == other.rank
+
+    def __hash__(self)-> int:
+        return hash((self.suit, self.rank))
 
 class Marble(BaseModel):
     pos: int  # position on board (0 to 95)
@@ -37,14 +46,16 @@ class Action(BaseModel):
     pos_to: Optional[int]  # position to move the marble to
     card_swap: Optional[Card] = None  # optional card to swap ()
 
-    def __eq__(self, other) ->bool:
-        
-        pass
+    def __eq__(self, other: object) ->bool:
+        if not isinstance(other, Action):
+            return False
+        return (self.card==other.card and
+                self.pos_from == other.pos_from and
+                self.pos_to == other.pos_to and
+                self.card_swap == other.card_swap)
 
     def __hash__(self):
-        # Kombiniere die Attribute zu einem Hash-Wert
         return hash((self.card, self.pos_from, self.pos_to ,self.card_swap))
-
 
 class GamePhase(str, Enum):
     SETUP = 'setup'  # before the game has started
@@ -108,7 +119,7 @@ class GameState(BaseModel):
     cnt_round: int = 0  # current round
     bool_card_exchanged: bool = False  # true if cards was exchanged in round
     list_swap_card: List[Optional[Card]] = [None]*4 # empty Carddeck for cards to be swapt
-    idx_player_active: int = random.randint(0, 3)   # index of active player in round
+    idx_player_active: int = 0 #random.randint(0, 3)   # index of active player in round
     idx_player_started: int =  idx_player_active# index of player that started the round
 
     list_player: List[PlayerState] = []  # list of players
@@ -171,7 +182,7 @@ class GameState(BaseModel):
             if not selected_player.list_card:
                 continue
             else:
-                return
+                return 
         # Go to next Gameround
         self.cnt_round += 1
 
@@ -192,7 +203,7 @@ class GameState(BaseModel):
                 self.list_card_draw.remove(card)
 
         # Set Cardexchange
-        self.bool_card_exchanged = False      
+        self.bool_card_exchanged = False     
 
     def discard_invalid_cards(self) -> None:
         # check if player has cards
@@ -626,17 +637,30 @@ class GameState(BaseModel):
                 if p_marble.pos == moved_marble.pos and p_marble != moved_marble:
                     p_marble.pos = p_marble.start_pos
 
-
     def skip_save_marble(self, action: Action) -> bool:
         """
         Prüft, ob zwischen action.pos_from und action.pos_to sichere Murmeln liegen.
         Gibt False zurück, wenn eine sichere Murmel in diesem Bereich gefunden wird,
         andernfalls True.
         """
+
         for player in self.list_player:
             for marble in player.list_marble:
-                if action.pos_from < marble.pos <= action.pos_to and marble.is_save:
+                # Direkte Bewegung ohne Überlauf (z.B. 5 -> 10)
+                if action.pos_from < marble.pos < action.pos_to and marble.is_save:
                     return False
+
+                # Bewegung mit Überlauf (z.B. 63 -> 5)
+                elif action.pos_from > action.pos_to:
+                    if marble.is_save and (
+                            marble.pos > action.pos_from or marble.pos < action.pos_to or marble.pos == 0
+                    ):
+                        return False
+
+                # Blockierung bei Startposition (pos=0)
+                if marble.pos == 0 and marble.is_save and action.pos_from == 0:
+                    return False
+
         return True
 
     def is_player_finished(self, player: PlayerState) -> bool:
@@ -671,7 +695,7 @@ class GameState(BaseModel):
         pos_to = action_to_check.pos_to
 
         # Calculate the movement for go Final
-        if startpos = 0 or pos_from > pos_to: # Normal case
+        if startpos == 0 or pos_from > pos_to: # Normal case
             steps = pos_to - pos_from
             stepps_to_final = startpos-pos_from
             overlap = abs(abs(steps) - abs(stepps_to_final))
@@ -703,8 +727,10 @@ class GameState(BaseModel):
 
         if idx_next_player == self.idx_player_started:
             self.deal_cards()
-            self.idx_player_started = (self.idx_player_started + 1) % 4
-            self.idx_player_active = self.idx_player_started
+            if self.bool_card_exchanged:
+                self.idx_player_active = idx_next_player
+            else:
+                self.idx_player_started = (self.idx_player_started + 1) % 4
         else:
             self.idx_player_active = idx_next_player
 
