@@ -643,24 +643,22 @@ class GameState(BaseModel):
         Gibt False zurück, wenn eine sichere Murmel in diesem Bereich gefunden wird,
         andernfalls True.
         """
-
         for player in self.list_player:
             for marble in player.list_marble:
                 # Direkte Bewegung ohne Überlauf (z.B. 5 -> 10)
-                if action.pos_from < marble.pos < action.pos_to and marble.is_save:
-                    return False
+                if action.pos_from < marble.pos < action.pos_to:
+                    if marble.is_save and action.pos_to not in player.list_finish_pos:
+                        return False
 
                 # Bewegung mit Überlauf (z.B. 63 -> 5)
                 elif action.pos_from > action.pos_to:
                     if marble.is_save and (
-                            marble.pos > action.pos_from or marble.pos < action.pos_to or marble.pos == 0
-                    ):
+                            marble.pos > action.pos_from or marble.pos < action.pos_to):
                         return False
 
                 # Blockierung bei Startposition (pos=0)
                 if marble.pos == 0 and marble.is_save and action.pos_from == 0:
                     return False
-
         return True
 
     def is_player_finished(self, player: PlayerState) -> bool:
