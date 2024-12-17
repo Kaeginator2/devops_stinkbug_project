@@ -10,6 +10,8 @@ if __name__ == '__main__':
     from game import Game, Player
 else:
     from server.py.game import Game, Player
+    # from game import Game, Player
+
 
 
 class Card(BaseModel):
@@ -108,7 +110,7 @@ class GameState(BaseModel):
     cnt_round: int = 0  # current round
     bool_card_exchanged: bool = False  # true if cards was exchanged in round
     list_swap_card: List[Optional[Card]] = [None]*4 # empty Carddeck for cards to be swapt
-    idx_player_active: int = random.randint(0, 3)   # index of active player in round
+    idx_player_active: int = 0 #random.randint(0, 3)   # index of active player in round
     idx_player_started: int =  idx_player_active# index of player that started the round
 
     list_player: List[PlayerState] = []  # list of players
