@@ -1,0 +1,50 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches:
+      - main  # Trigger workflow when pushing to main branch
+
+jobs:
+  deploy-job:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'       # Allow repository content access
+      id-token: 'write'      # Allow Workload Identity Federation authentication
+
+    steps:
+      # Step 1: Checkout repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Authenticate with Google Cloud
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          service_account: "40238985301-compute@developer.gserviceaccount.com"
+          project_id: "devops-team-7-349163"
+          workload_identity_provider: "projects/40238985301/locations/global/workloadIdentityPools/github/providers/my-repo"
+
+      # Step 3: Set up Google Cloud SDK
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: "devops-team-7-349163"
+
+      # Step 4: Build and Push Docker Image to Google Container Registry (GCR)
+      - name: Build and Push Docker Image
+        run: |
+          gcloud auth configure-docker
+          IMAGE_NAME=gcr.io/devops-team-7-349163/my-app
+          docker build -t $IMAGE_NAME:${{ github.sha }} .
+          docker push $IMAGE_NAME:${{ github.sha }}
+
+      # Step 5: Deploy to Google Cloud Run (europe-west6 region)
+      - name: Deploy to Cloud Run
+        run: |
+          IMAGE_NAME=gcr.io/devops-team-7-349163/my-app
+          gcloud run deploy my-cloud-run-service \
+            --image $IMAGE_NAME:${{ github.sha }} \
+            --region europe-west6 \
+            --platform managed \
+            --allow-unauthenticated
