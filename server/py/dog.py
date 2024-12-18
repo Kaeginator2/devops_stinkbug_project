@@ -215,7 +215,7 @@ class GameState(BaseModel):
         self.list_card_discard.extend(self.list_player[self.idx_player_active].list_card)
         self.list_player[self.idx_player_active].list_card = []
 
-    def get_seven_actions(self, card:Card, marble:Marble)->list[Optional[Action]]:
+    def get_seven_actions(self, card:Card, marble:Marble)->list[Action]:
         actions = []
         remaining_steps = 7 - self.cnt_seven_steps
         
