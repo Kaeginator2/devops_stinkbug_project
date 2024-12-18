@@ -6,10 +6,11 @@ from typing import List, Optional, ClassVar
 from enum import Enum
 from pydantic import BaseModel
 
-if __name__ == '__main__':
-    from game import Game, Player
-else:
-    from server.py.game import Game, Player
+# if __name__ == '__main__':
+#     from game import Game, Player
+# else:
+    # from server.py.game import Game, Player
+from server.py.game import Game, Player
     # from game import Game, Player
 
 
