@@ -376,15 +376,15 @@ class TestGameState:
 
         # Initialisiere Murmeln
         marble1 = Marble(pos=0, start_pos=0, is_save=True)  # Gehört zu player1
-        marble2 = Marble(pos=15, start_pos=15, is_save=True)  # Gehört zu player1
+        marble2 = Marble(pos=16, start_pos=16, is_save=True)  # Gehört zu player1
         marble3 = Marble(pos=5, start_pos=5, is_save=False)  # Gehört zu player2
-        marble4 = Marble(pos=10, start_pos=10, is_save=True)  # Gehört zu player2
+        #marble4 = Marble(pos=10, start_pos=10, is_save=True)  # Gehört zu player2
 
         # Füge Murmeln den Spielern hinzu
         player1.list_marble.append(marble1)
         player1.list_marble.append(marble2)
         player2.list_marble.append(marble3)
-        player2.list_marble.append(marble4)
+       # player2.list_marble.append(marble4)
 
         # Füge Spieler zum GameState hinzu
         game_state.list_player.extend([player1, player2])
@@ -395,7 +395,7 @@ class TestGameState:
         assert result is True
 
         # Test 2: Blockiert durch Murmel eines fremden Spielers (marble4, pos=10, is_save=True)
-        result = game_state.skip_save_marble(Action(pos_from=8, pos_to=13, card=card))
+        result = game_state.skip_save_marble(Action(pos_from=12, pos_to=17, card=card))
         assert result is False
 
         # Test 3: Blockiert durch eigene Murmel (marble2, pos=15, is_save=True)

@@ -2071,7 +2071,7 @@ class DogBenchmark(benchmark.Benchmark):
             player.list_marble[0].pos = pos_from
             player.list_marble[0].is_save = False
             player.list_marble[1].pos = pos_to - offset
-            player.list_marble[1].is_save = False
+            player.list_marble[1].is_save = True
             self.game_server.set_state(state)
             str_state = str(state)
 

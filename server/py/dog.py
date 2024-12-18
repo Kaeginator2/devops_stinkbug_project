@@ -687,29 +687,34 @@ class GameState(BaseModel):
             return False # Needed for MyPy (Error in Action)
 
         save_positions = [0, 16, 32, 48]
+
         for player in self.list_player:
             for marble in player.list_marble:
-                # Im Spiel nicht weiter gehen, wenn eine sichere im Weg ist.
+                # Blockieren durch sichere Murmel auf der Zielposition (Finish)
+                if action.pos_to in player.list_finish_pos:
+                    if marble.pos == action.pos_to and marble.is_save:
+                        return False
+
+                # Blockieren durch Überholen im Finish-Bereich
+                if marble.is_save and marble.pos in player.list_finish_pos:
+                    if action.pos_from < marble.pos <= action.pos_to:
+                        return False
+
+                # Allgemeine Bewegung vorwärts blockiert
                 if action.pos_from < marble.pos <= action.pos_to:
-                    if marble.is_save and action.pos_to not in player.list_finish_pos:
+                    if marble.is_save and marble.pos in save_positions:
                         return False
 
-                # Nicht rückwärts gehen, wenn eine sichere im Weg ist
-                elif action.pos_from > action.pos_to:
-                    if marble.is_save and (
-                            marble.pos >= action.pos_from or marble.pos <= action.pos_to):
+                # Allgemeine Bewegung rückwärts blockiert
+                if action.pos_from > marble.pos >= action.pos_to:
+                    if marble.is_save and marble.pos in save_positions:
                         return False
 
-                # Nicht aus dem Kennel kommen, wenn eine auf der Startposition liegt und sicher ist
-                elif action.pos_to in save_positions:
-                    if marble.pos in save_positions and marble.is_save:
+                if action.pos_from > marble.pos <= action.pos_to:
+                    if marble.is_save and marble.pos in save_positions:
                         return False
 
-                # Nicht ins Ziel marschieren, wenn der Start blockiert ist
-                elif action.pos_to in player.list_finish_pos:
-                    if marble.pos in save_positions and marble.is_save:
-                        return False
-
+        # Wenn keine Blockade gefunden wurde
         return True
 
     def is_player_finished(self, player: PlayerState) -> bool:
