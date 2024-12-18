@@ -261,18 +261,18 @@ class GameState(BaseModel):
                             case 'K':
                                 leaving_marble = marble
                                 action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None)
-                                if self.skip_save_marble(action):
+                                if not self.skip_save_marble(action):
                                     action_list.append(action)
                             case 'A':
                                 leaving_marble = marble
                                 action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos,
                                                 card_swap=None)
-                                if self.skip_save_marble(action):
+                                if not self.skip_save_marble(action):
                                     action_list.append(action)
                             case 'JKR':
                                 leaving_marble = marble
                                 action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None)
-                                if self.skip_save_marble(action):
+                                if not self.skip_save_marble(action):
                                     action_list.append(action)
                             case _:
                                 pass
@@ -372,7 +372,7 @@ class GameState(BaseModel):
                         case 'J':
                             for oponent_player in oponent_players:
                                 for oponent_marble in oponent_player.list_marble:
-                                    if not oponent_marble.is_save: 
+                                    if not oponent_marble.is_save:
                                         action_list.append(Action(card = card,pos_from = marble.pos,
                                                                   pos_to = oponent_marble.pos, card_swap = None))
                                         action_list.append(Action(card = card,pos_from = oponent_marble.pos ,
@@ -549,7 +549,7 @@ class GameState(BaseModel):
                         case _:
                             pass
 
-        return set(action_list)
+        return list(set(action_list))
 
     def swap_joker_with_card(self, action: Action) -> None:
         active_player = self.list_player[self.idx_player_active]
