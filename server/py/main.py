@@ -7,7 +7,7 @@ import json
 import asyncio
 
 import server.py.hangman as hangman
-import server.py.battleship_solution as battleship
+import server.py.battleship as battleship
 #import server.py.battleship as battleship
 import server.py.dog as dog
 
