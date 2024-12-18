@@ -126,7 +126,8 @@ class GameState(BaseModel):
     list_card_draw: List[Card] = LIST_CARD  # list of cards to draw ==> Was list_id_card_draw in given Template
     list_card_discard: List[Card] = []  # list of cards discarded
     card_active: Optional[Card] = None  # active card (for 7 and JKR with sequence of actions)
-    played_seven_actions: List[Action] = []
+    cnt_seven_steps: int = 0 # Counter of how meany steps there were made with the 7
+    # played_seven_actions: List[Action] = []
 
 
     def setup_players(self) -> None:  # Kägi
@@ -213,24 +214,29 @@ class GameState(BaseModel):
         self.list_card_discard.extend(self.list_player[self.idx_player_active].list_card)
         self.list_player[self.idx_player_active].list_card = []
 
+    def get_seven_actions(self, card:Card, marble:Marble)->list[Optional: Action]:
+        actions = []
+        remaining_steps = 7 - self.cnt_seven_steps
+        
+        # Generate all combinations of moves that sum to the remaining steps
+        for steps in range(1, remaining_steps + 1):
+            pos_from = marble.pos
+            pos_to = pos_from + steps  # Simplified: actual position calculation may differ based on board layout
+            action = Action(card=card, pos_from=pos_from, pos_to=pos_to)
+            action_final = self.go_in_final(action)
+
+            # validate the moves (not implemented here)
+            if self.skip_save_marble(action):
+                actions.append(action)
+            if action_final:
+                if self.skip_save_marble(action_final[0]):
+                    actions.append(action_final[0])
+
+        return actions
 
     def get_list_possible_action(self) -> List[Action]:  # Nicolas
-        list_steps_split_7 = [
-            [1, 1, 1, 1, 1, 1, 1],
-            [2, 1, 1, 1, 1, 1],
-            [2, 2, 1, 1, 1],
-            [2, 2, 2, 1],
-            [3, 1, 1, 1, 1],
-            [3, 2, 1, 1],
-            [3, 2, 2],
-            [3, 3, 1],
-            [4, 1, 1, 1],
-            [4, 2, 1],
-            [4, 3],
-            [5, 2],
-            [6, 1],
-            [7]
-        ]
+
+
         active_player = self.list_player[self.idx_player_active]
         if self.card_active is not None:
             cards = [self.card_active]
@@ -331,17 +337,7 @@ class GameState(BaseModel):
                                     if self.skip_save_marble(action):
                                         action_list.append(action)
                         case '7':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + 7) % 64, # Seven as Normal card
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
-
-
+                            action_list.extend(self.get_seven_actions(card=card, marble=marble))
                             #for steps_split in list_steps_split_7:
                             #    for i, steps in enumerate(steps_split):
                             #        action = Action(card=card, pos_from=marble.pos,
@@ -349,6 +345,7 @@ class GameState(BaseModel):
                             #        going_final_action_list = self.go_in_final(action)
                             #        if going_final_action_list:
                             #            action_list.extend(going_final_action_list)
+
                         case '8':
                             action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +8) % 64,
                                             card_swap=None)
@@ -575,7 +572,7 @@ class GameState(BaseModel):
                         case _:
                             pass
 
-        return action_list
+        return set(action_list)
 
     def swap_joker_with_card(self, action: Action) -> None:
         active_player = self.list_player[self.idx_player_active]
@@ -585,12 +582,38 @@ class GameState(BaseModel):
                 self.card_active = action.card_swap # Setze die getauschte Karte aktiv
 
 
+    def apply_seven_action(self, action:Action)->None:
+        # Check if its the First 7 round
+        if self.card_active is None:
+            self.card_active = action.card
+            self.cnt_seven_steps = 0
+        if action.pos_from is None or action.pos_to is None:
+            return # Activate the seven
+
+        # Set Action to the GameState ==> make movement on the "board"     
+        steps_to_make = action.pos_to - action.pos_from
+        current_pos = action.pos_from
+
+        for _ in range(steps_to_make):
+            # Creat subaction to use set_action_to_game
+            sub_action = Action(card=action.card,
+                                pos_from=current_pos,
+                                pos_to=current_pos + 1,
+                                card_swap=action.card_swap)
+            self.set_action_to_game(sub_action)
+            self.cnt_seven_steps += 1
+            current_pos += 1  # Update current_pos for the next sub_action
+
+        # finish the seven action if there were made 7 steps
+        if self.cnt_seven_steps == 7:
+            self.card_active = None
+
 
     def set_action_to_game(self, action: Action)-> None:  # kaegi
         # Action is from the active Player
         # Set Action to the GameState ==> make movement on the "board"
         marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble if marble.pos == action.pos_from), None)
-
+        marble_to_move.is_save = False
         # Check if marble comes from kenel
         if marble_to_move.pos == marble_to_move.start_pos:
             marble_to_move.is_save = True
@@ -643,22 +666,30 @@ class GameState(BaseModel):
         Gibt False zurück, wenn eine sichere Murmel in diesem Bereich gefunden wird,
         andernfalls True.
         """
+        save_positions = [0, 16, 32, 48]
         for player in self.list_player:
             for marble in player.list_marble:
-                # Direkte Bewegung ohne Überlauf (z.B. 5 -> 10)
-                if action.pos_from < marble.pos < action.pos_to:
+                # Im Spiel nicht weiter gehen, wenn eine sichere im Weg ist.
+                if action.pos_from < marble.pos <= action.pos_to:
                     if marble.is_save and action.pos_to not in player.list_finish_pos:
                         return False
 
-                # Bewegung mit Überlauf (z.B. 63 -> 5)
+                # Nicht rückwärts gehen, wenn eine sichere im Weg ist
                 elif action.pos_from > action.pos_to:
                     if marble.is_save and (
-                            marble.pos > action.pos_from or marble.pos < action.pos_to):
+                            marble.pos >= action.pos_from or marble.pos <= action.pos_to):
                         return False
 
-                # Blockierung bei Startposition (pos=0)
-                if marble.pos == 0 and marble.is_save and action.pos_from == 0:
-                    return False
+                # Nicht aus dem Kennel kommen, wenn eine auf der Startposition liegt und sicher ist
+                elif action.pos_to in save_positions:
+                    if marble.pos in save_positions and marble.is_save:
+                        return False
+
+                # Nicht ins Ziel marschieren, wenn der Start blockiert ist
+                elif action.pos_to in player.list_finish_pos:
+                    if marble.pos in save_positions and marble.is_save:
+                        return False
+
         return True
 
     def is_player_finished(self, player: PlayerState) -> bool:
@@ -677,7 +708,7 @@ class GameState(BaseModel):
                 self.phase = GamePhase.FINISHED
                 return
 
-    def go_in_final(self, action_to_check: Action) -> List[Action]:
+    def go_in_final(self, action_to_check: Action) -> Optional[Action]:
         """
         Checks if it is possible to go in the final
         Yes, creat the Actions fo that + unchanged action
@@ -685,7 +716,7 @@ class GameState(BaseModel):
         """
         # Get infos from Gamestate
         active_player = self.list_player[self.idx_player_active]
-        final_pos = active_player.list_marble[-1].start_pos+1
+        final_pos = active_player.list_finish_pos[0]
 
         # get positions
         startpos = active_player.start_pos
@@ -709,10 +740,10 @@ class GameState(BaseModel):
                                 pos_from=action_to_check.pos_from,
                                 pos_to=set_pos_to,
                                 card_swap=action_to_check.card_swap)
-            return [action_to_check, new_action]
+            return [new_action]
 
         # If not possible to go in final return given action
-        return [action_to_check]
+        return []
 
     def init_next_turn(self) -> None:
         """
@@ -760,6 +791,8 @@ class GameState(BaseModel):
 
 class Dog(Game):
 
+    seven_backup:GameState
+
     def __init__(self) -> None:
         """ Game initialization (set_state call not necessary, we expect 4 players) """
         # print("Starting up DOG")
@@ -798,14 +831,10 @@ class Dog(Game):
         if self.state.bool_card_exchanged is False:
             action_list = [Action(card=hand_card,pos_from=None, pos_to=None) for hand_card in self.state.list_player[self.state.idx_player_active].list_card]
             return action_list
-        
+
+        #Get the list with possible actions
         action_list = self.state.get_list_possible_action()
-
-        #if self.state.card_active.rank == '7':
-
         return action_list
-
-        # else: Logic for card 7
 
     def apply_action(self, action: Action) -> None:
         """
@@ -813,7 +842,13 @@ class Dog(Game):
         """
 
         if action is None: # If player can not play any actions
-            self.state.discard_invalid_cards()
+            if self.state.card_active is None:
+                self.state.discard_invalid_cards()
+            elif self.state.card_active.rank =='7':
+                #Backup the game
+                self.state = self.seven_backup
+                self.state.card_active = None
+                return # Retry without next Player
 
         # Check if exchange cards is needed
         elif self.state.bool_card_exchanged is False:
@@ -823,17 +858,18 @@ class Dog(Game):
             self.state.swap_joker_with_card(action)
 
         elif action:
-            #if action.card.rank == '7':
-            #    self.state.played_seven_actions.append(action)
+            if action.card.rank == '7' and self.state.card_active is None:
+                self.seven_backup = copy.deepcopy(self.state)
+            if action.card.rank == '7':
+                self.state.apply_seven_action(action)
 
-            self.state.set_action_to_game(action)
+            else:
+                self.state.set_action_to_game(action)
 
             # Removed played Card from Players Hand
-            self.state.list_card_discard.append(action.card)
-            self.state.list_player[self.state.idx_player_active].list_card.remove(action.card)
-
-        
-
+            if  self.state.card_active is None:
+                self.state.list_card_discard.append(action.card)
+                self.state.list_player[self.state.idx_player_active].list_card.remove(action.card)
 
         # Sets the next Player active if there is not a Card active
         if self.state.card_active is None:

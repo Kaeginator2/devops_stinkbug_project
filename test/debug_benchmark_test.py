@@ -852,6 +852,7 @@ class DogBenchmark():
 
                     state = self.game.get_state()
                     str_states += str(state)
+                    print(str_states)
 
                     found = False
                     player = state.list_player[idx_player_active]
@@ -2195,7 +2196,7 @@ def run_all_tests():
         if method_name.startswith("test_"):
             docstring = method.__doc__ or "Keine Beschreibung vorhanden."
 
-            if "048" not in docstring:
+            if not any(code in docstring for code in ["029", "030", "031", "032","033","034","035"]):
                 continue
                 
             print(f"Ausfuehren des Tests: {method_name}")
