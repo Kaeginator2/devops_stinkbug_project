@@ -19,7 +19,7 @@ class Card(BaseModel):
     suit: str  # card suit (color)
     rank: str  # card rank
 
-    def __eq__(self, other: any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Card):
             return False
         return self.suit == other.suit and self.rank == other.rank
@@ -55,7 +55,7 @@ class Action(BaseModel):
                 self.pos_to == other.pos_to and
                 self.card_swap == other.card_swap)
 
-    def __hash__(self):
+    def __hash__(self)-> int:
         return hash((self.card, self.pos_from, self.pos_to ,self.card_swap))
 
 class GamePhase(str, Enum):
@@ -215,7 +215,7 @@ class GameState(BaseModel):
         self.list_card_discard.extend(self.list_player[self.idx_player_active].list_card)
         self.list_player[self.idx_player_active].list_card = []
 
-    def get_seven_actions(self, card:Card, marble:Marble)->list[Optional: Action]:
+    def get_seven_actions(self, card:Card, marble:Marble)->list[Action]:
         actions = []
         remaining_steps = 7 - self.cnt_seven_steps
         
@@ -552,6 +552,8 @@ class GameState(BaseModel):
         return list(set(action_list))
 
     def swap_joker_with_card(self, action: Action) -> None:
+        if action.card_swap is None:
+            return # Needed fpr MyPy
         active_player = self.list_player[self.idx_player_active]
         for idx, card in enumerate(active_player.list_card):
             if card.suit == action.card.suit and card.rank == action.card.rank:
@@ -589,7 +591,16 @@ class GameState(BaseModel):
     def set_action_to_game(self, action: Action)-> None:  # kaegi
         # Action is from the active Player
         # Set Action to the GameState ==> make movement on the "board"
-        marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble if marble.pos == action.pos_from), None)
+        if action.pos_from is None or action.pos_to is None:
+            return # Needed for MyPy
+
+        # Get Marble to Move
+        marble_to_move:Optional[Marble]
+        marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble 
+                               if marble.pos == action.pos_from), None)
+        if marble_to_move is None:
+            return # Needed for MyPy
+
         marble_to_move.is_save = False
         # Check if marble comes from kenel
         if marble_to_move.pos == marble_to_move.start_pos:
@@ -614,12 +625,14 @@ class GameState(BaseModel):
         # Check iff all Player selected a Card, Return if not
         if None in self.list_swap_card:
             return
-        
+
         # Swap Cards with teammember
         for i, player in enumerate(self.list_player):
             opposite_player_index = (i + 2) % 4  # Index des Teammitglieds
-            player.list_card.append(self.list_swap_card[opposite_player_index])
-        
+            card_to_add = self.list_swap_card[opposite_player_index]
+            if card_to_add is not None:
+                player.list_card.append(card_to_add)
+
         # Set global Variables
         self.bool_card_exchanged = True
         self.list_swap_card = [None]*4
@@ -643,6 +656,9 @@ class GameState(BaseModel):
         Gibt False zurück, wenn eine sichere Murmel in diesem Bereich gefunden wird,
         andernfalls True.
         """
+        if action.pos_from is None or action.pos_to is None:
+            return False # Needed for MyPy (Error in Action)
+
         save_positions = [0, 16, 32, 48]
         for player in self.list_player:
             for marble in player.list_marble:
@@ -691,6 +707,9 @@ class GameState(BaseModel):
         Yes, creat the Actions fo that + unchanged action
         No, return Action unchanged
         """
+        if action_to_check.pos_from is None or action_to_check.pos_from is None:
+            return [action_to_check]
+
         active_player = self.list_player[self.idx_player_active]
         final_pos = active_player.list_finish_pos[0]
 
@@ -698,6 +717,8 @@ class GameState(BaseModel):
         startpos = active_player.start_pos
         pos_from = action_to_check.pos_from
         pos_to = action_to_check.pos_to
+        if pos_to is None:
+            return [action_to_check] # Needed for MyPy
 
         if pos_to >= startpos and pos_from < 64:
             leftover = pos_to - startpos
@@ -805,7 +826,7 @@ class Dog(Game):
         action_list = self.state.get_list_possible_action()
         return action_list
 
-    def apply_action(self, action: Action) -> None:
+    def apply_action(self, action: Optional[Action]) -> None:
         """
         Do the movement conected to the Action
         """
