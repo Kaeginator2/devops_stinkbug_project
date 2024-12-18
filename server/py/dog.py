@@ -629,7 +629,9 @@ class GameState(BaseModel):
         # Swap Cards with teammember
         for i, player in enumerate(self.list_player):
             opposite_player_index = (i + 2) % 4  # Index des Teammitglieds
-            player.list_card.append(self.list_swap_card[opposite_player_index])
+            card_to_add = self.list_swap_card[opposite_player_index]
+            if card_to_add is not None:
+                player.list_card.append(card_to_add)
 
         # Set global Variables
         self.bool_card_exchanged = True
@@ -654,6 +656,9 @@ class GameState(BaseModel):
         Gibt False zurück, wenn eine sichere Murmel in diesem Bereich gefunden wird,
         andernfalls True.
         """
+        if action.pos_from is None or action.pos_to is None:
+            return False # Needed for MyPy (Error in Action)
+
         save_positions = [0, 16, 32, 48]
         for player in self.list_player:
             for marble in player.list_marble:
@@ -712,6 +717,8 @@ class GameState(BaseModel):
         startpos = active_player.start_pos
         pos_from = action_to_check.pos_from
         pos_to = action_to_check.pos_to
+        if pos_to is None:
+            return [action_to_check] # Needed for MyPy
 
         if pos_to >= startpos and pos_from < 64:
             leftover = pos_to - startpos
