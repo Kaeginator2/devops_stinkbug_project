@@ -251,7 +251,6 @@ class GameState(BaseModel):
         action_list = []
 
 
-        #  Todo Home Check
         leaving_marble = None
         for marble in marbles:
             if marble.pos in active_player.list_kennel_pos:
@@ -338,13 +337,6 @@ class GameState(BaseModel):
                                         action_list.append(action)
                         case '7':
                             action_list.extend(self.get_seven_actions(card=card, marble=marble))
-                            #for steps_split in list_steps_split_7:
-                            #    for i, steps in enumerate(steps_split):
-                            #        action = Action(card=card, pos_from=marble.pos,
-                            #                                  pos_to=(marble.pos + steps) % 64, card_swap=None)
-                            #        going_final_action_list = self.go_in_final(action)
-                            #        if going_final_action_list:
-                            #            action_list.extend(going_final_action_list)
 
                         case '8':
                             action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +8) % 64,
@@ -544,23 +536,7 @@ class GameState(BaseModel):
                                     if self.skip_save_marble(action):
                                         action_list.append(action)
 
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + 7) % 64, #Seven as a Normal Card
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
-
-                            #for steps_split in list_steps_split_7:
-                            #    for i, steps in enumerate(steps_split):
-                            #        action = Action(card=card, pos_from=marble.pos,
-                            #                        pos_to=(marble.pos + steps) % 64, card_swap=None)
-                            #        going_final_action_list = self.go_in_final(action)
-                            #        if going_final_action_list:
-                            #            action_list.extend(going_final_action_list)
+                            action_list.extend(self.get_seven_actions(card=card, marble=marble))
 
                             for oponent_player in oponent_players:
                                 for oponent_marble in oponent_player.list_marble:
@@ -708,13 +684,12 @@ class GameState(BaseModel):
                 self.phase = GamePhase.FINISHED
                 return
 
-    def go_in_final(self, action_to_check: Action) -> Optional[Action]:
+    def go_in_final(self, action_to_check: Action) -> List[Action]:
         """
         Checks if it is possible to go in the final
         Yes, creat the Actions fo that + unchanged action
         No, return Action unchanged
         """
-        # Get infos from Gamestate
         active_player = self.list_player[self.idx_player_active]
         final_pos = active_player.list_finish_pos[0]
 
@@ -723,27 +698,20 @@ class GameState(BaseModel):
         pos_from = action_to_check.pos_from
         pos_to = action_to_check.pos_to
 
-        # Calculate the movement for go Final
-        if startpos == 0 or pos_from > pos_to: # Normal case
-            steps = pos_to - pos_from
-            stepps_to_final = startpos-pos_from
-            overlap = abs(abs(steps) - abs(stepps_to_final))
-        else: # Special Case Startpos = 0 PlayerBlue
-            steps = 64-pos_to-pos_from
-            stepps_to_final = startpos-pos_from
-            overlap = abs(abs(steps) - abs(stepps_to_final))
+        if pos_to >= startpos and pos_from < 64:
+            leftover = pos_to - startpos
+            if 1 <= leftover <= 4:
+                final_state = final_pos + (leftover - 1)
+                new_action = Action(
+                    card = action_to_check.card,
+                    pos_from = pos_from,
+                    pos_to = final_state,
+                    card_swap = action_to_check.card_swap
+                )
+                return [new_action]
+        return [action_to_check]
 
-        # when the reminderstps after start are between 1&4 go in final
-        if abs(overlap) <5:
-            set_pos_to = final_pos + abs(overlap)-1
-            new_action = Action(card=action_to_check.card,
-                                pos_from=action_to_check.pos_from,
-                                pos_to=set_pos_to,
-                                card_swap=action_to_check.card_swap)
-            return [new_action]
 
-        # If not possible to go in final return given action
-        return []
 
     def init_next_turn(self) -> None:
         """
