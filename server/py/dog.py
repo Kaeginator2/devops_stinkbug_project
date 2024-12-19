@@ -10,6 +10,7 @@ from pydantic import BaseModel
 #     from game import Game, Player
 # else:
     # from server.py.game import Game, Player
+
 from server.py.game import Game, Player
     # from game import Game, Player
 
@@ -62,7 +63,6 @@ class GamePhase(str, Enum):
     SETUP = 'setup'  # before the game has started
     RUNNING = 'running'  # while the game is running
     FINISHED = 'finished'  # when the game is finished
-
 
 class GameState(BaseModel):
     LIST_SUIT: ClassVar[List[str]] = ['♠', '♥', '♦', '♣']  # 4 suits (colors)
@@ -184,7 +184,7 @@ class GameState(BaseModel):
             if not selected_player.list_card:
                 continue
             else:
-                return 
+                return
         # Go to next Gameround
         self.cnt_round += 1
 
@@ -205,7 +205,7 @@ class GameState(BaseModel):
                 self.list_card_draw.remove(card)
 
         # Set Cardexchange
-        self.bool_card_exchanged = False     
+        self.bool_card_exchanged = False
 
     def discard_invalid_cards(self) -> None:
         # check if player has cards
@@ -218,7 +218,6 @@ class GameState(BaseModel):
     def get_seven_actions(self, card:Card, marble:Marble)->list[Action]:
         actions = []
         remaining_steps = 7 - self.cnt_seven_steps
-        
         # Generate all combinations of moves that sum to the remaining steps
         for steps in range(1, remaining_steps + 1):
             pos_from = marble.pos
@@ -234,10 +233,10 @@ class GameState(BaseModel):
                     actions.append(action_final[0])
 
         return actions
-    
+
     def get_move_action(self, movement:int, card:Card, marble:Marble) -> List[Action]:
         action_list = []
-        # Chek if Marble is in Final
+        # Check if Marble is in Final
         if marble.pos>64:
             action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + movement), card_swap=None)
         else:
@@ -252,14 +251,14 @@ class GameState(BaseModel):
                 if self.skip_save_marble(action):
                     action_list.append(action)
         return action_list
-    
+
     def get_joker_actions_kennel_out(self, card:Card)-> list[Action]:
         action_list = []
         for suit in self.LIST_SUIT:
             action_list.append(Action(card=card, pos_from=None,pos_to=None, card_swap=Card(suit=suit, rank='K')))
             action_list.append(Action(card=card, pos_from=None,pos_to=None, card_swap=Card(suit=suit, rank='A')))
         return action_list
-    
+
     def get_joker_actions_normal(self, card:Card)-> list[Action]:
         action_list = []
         for suit in self.LIST_SUIT:
@@ -268,8 +267,6 @@ class GameState(BaseModel):
         return action_list
 
     def get_list_possible_action(self) -> List[Action]:  # Nicolas
-
-
         active_player = self.list_player[self.idx_player_active]
         if self.card_active is not None:
             cards = [self.card_active]
@@ -278,13 +275,11 @@ class GameState(BaseModel):
 
         if not cards:
             return []
-
         marbles = active_player.list_marble
         oponent_players = [oponent for oponent in self.list_player if oponent.name != active_player.name]
         action_list = []
-
-
         leaving_marble = None
+
         for marble in marbles:
             if marble.pos in active_player.list_kennel_pos:
                 if leaving_marble is None:
@@ -292,7 +287,8 @@ class GameState(BaseModel):
                         match card.rank:
                             case 'K':
                                 leaving_marble = marble
-                                action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None)
+                                action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos,
+                                                card_swap=None)
                                 if self.skip_save_marble(action):
                                     action_list.append(action)
                             case 'A':
@@ -303,7 +299,8 @@ class GameState(BaseModel):
                                     action_list.append(action)
                             case 'JKR':
                                 leaving_marble = marble
-                                action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None)
+                                action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos,
+                                                card_swap=None)
                                 if self.skip_save_marble(action):
                                     action_list.append(action)
                                 action_list.extend(self.get_joker_actions_kennel_out(card))
@@ -326,9 +323,8 @@ class GameState(BaseModel):
                             action_list.extend(self.get_move_action(movement=6 , card=card, marble=marble))
                         case '7':
                             action_list.extend(self.get_seven_actions(card=card, marble=marble))
-
                         case '8':
-                           action_list.extend(self.get_move_action(movement=8 , card=card, marble=marble))
+                            action_list.extend(self.get_move_action(movement=8 , card=card, marble=marble))
                         case '9':
                             action_list.extend(self.get_move_action(movement=9 , card=card, marble=marble))
                         case '10':
@@ -343,11 +339,10 @@ class GameState(BaseModel):
                                         action_list.append(Action(card = card,pos_from = oponent_marble.pos ,
                                                                   pos_to = marble.pos, card_swap = None))
                                         oponent_marble.is_save = False
-
                         case 'Q':
                             action_list.extend(self.get_move_action(movement=12 , card=card, marble=marble))
                         case 'K':
-                           action_list.extend(self.get_move_action(movement=13 , card=card, marble=marble))
+                            action_list.extend(self.get_move_action(movement=13 , card=card, marble=marble))
                         case 'A':
                             action_list.extend(self.get_move_action(movement=1 , card=card, marble=marble))
                             action_list.extend(self.get_move_action(movement=11 , card=card, marble=marble))
@@ -362,13 +357,11 @@ class GameState(BaseModel):
     def swap_joker_with_card(self, action: Action) -> None:
         if action.card_swap is None:
             return # Needed fpr MyPy
-        
         active_player = self.list_player[self.idx_player_active]
         for idx, card in enumerate(active_player.list_card):
             if card.suit == action.card.suit and card.rank == action.card.rank:
                 active_player.list_card[idx] = action.card_swap  # Überschreibe die JokcerKarte in der Liste
                 self.card_active = action.card_swap # Setze die getauschte Karte aktiv
-
 
     def apply_seven_action(self, action:Action)->None:
         # Check if its the First 7 round
@@ -377,8 +370,7 @@ class GameState(BaseModel):
             self.cnt_seven_steps = 0
         if action.pos_from is None or action.pos_to is None:
             return # Activate the seven
-
-        # Set Action to the GameState ==> make movement on the "board"     
+        # Set Action to the GameState ==> make movement on the "board"
         steps_to_make = action.pos_to - action.pos_from
         current_pos = action.pos_from
 
@@ -427,7 +419,7 @@ class GameState(BaseModel):
 
         # Get Marble to Move
         marble_to_move:Optional[Marble]
-        marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble 
+        marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble
                                if marble.pos == action.pos_from), None)
         if marble_to_move is None:
             return # Needed for MyPy
@@ -548,7 +540,7 @@ class GameState(BaseModel):
         """
         # Get Marble to Move
         marble_to_move:Optional[Marble]
-        marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble 
+        marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble
                                if marble.pos == action_to_check.pos_from), None)
 
         if action_to_check.pos_from is None or action_to_check.pos_from is None or marble_to_move is None:
@@ -624,8 +616,9 @@ class GameState(BaseModel):
 
         players_info = "\n".join([
             f"Player {idx+1} ({player.name}): {len(player.list_card)} cards, " \
-            f"{len(player.list_marble)} marbles\n" + 
-            "\n".join([f"  Marble at {marble.pos} - {'Safe' if marble.is_save else 'Not Safe'}" for marble in player.list_marble])
+            f"{len(player.list_marble)} marbles\n" +
+            "\n".join([f"  Marble at {marble.pos} - {'Safe' if marble.is_save else 'Not Safe'}"
+                       for marble in player.list_marble])
             for idx, player in enumerate(self.list_player)
         ])
 
@@ -637,7 +630,8 @@ class GameState(BaseModel):
         else:
             active_card_info = "No active card\n"
 
-        return main_seperator + state_details + part_seperator + players_info + "\n" + part_seperator + deck_info + active_card_info
+        return (main_seperator + state_details + part_seperator + players_info + "\n" + part_seperator +
+                deck_info + active_card_info)
 
 class Dog(Game):
 
@@ -679,7 +673,8 @@ class Dog(Game):
         """ Get a list of possible actions for the active player """
         # Swap Card Actions
         if self.state.bool_card_exchanged is False:
-            action_list = [Action(card=hand_card,pos_from=None, pos_to=None) for hand_card in self.state.list_player[self.state.idx_player_active].list_card]
+            action_list = [Action(card=hand_card,pos_from=None, pos_to=None) for hand_card in
+                           self.state.list_player[self.state.idx_player_active].list_card]
             return action_list
 
         #Get the list with possible actions
@@ -747,13 +742,13 @@ class RandomPlayer(Player):
 
     def select_action(self, state: GameState, actions: List[Action]) -> Optional[Action]:
         """ Given masked game state and possible actions, select the next action """
-        if actions and len(actions) > 0: 
+        if actions and len(actions) > 0:
             return random.choice(actions)
         return None
 
 
 if __name__ == '__main__':
-    print("*"*30, "- START GAME -", "*"*30)
+    print("*" * 30, "- START GAME -", "*" * 30)
 
     idx_player_you = 0
     game = Dog()
@@ -775,9 +770,9 @@ if __name__ == '__main__':
 
             player_state = game.get_player_view(idx_player_you)
             list_action = game.get_list_action()
-            
+
             # await websocket.send_json(data)
-            #print(data)
+            # print(data)
 
             if list_action is not None:
                 print("You are playing")
@@ -787,13 +782,13 @@ if __name__ == '__main__':
                 dict_state['list_action'] = [action.model_dump() for action in list_action]
                 data = {'type': 'update', 'state': dict_state}
 
-            else: # if not: delet all cards for this round
+            else:  # if not: delet all cards for this round
                 print("You don't have any possible Actions")
 
             # FIXME: Needs to get Choos from Server (real Player)
             action = player.select_action(game.state, list_action)  # Random Select an Action for debug
-            
-            print(f"Action from Player{state.idx_player_active} is",action)
+
+            print(f"Action from Player{state.idx_player_active} is", action)
             # Apply Action to Game
             game.apply_action(action)
 
@@ -815,8 +810,8 @@ if __name__ == '__main__':
             if action is not None:
                 print(f"Player {game.state.idx_player_active} is playing")
                 # await asyncio.sleep(1)
-                print(f"Action from Player{state.idx_player_active} is",action)
-            else:# if not: delet all cards for this round
+                print(f"Action from Player{state.idx_player_active} is", action)
+            else:  # if not: delet all cards for this round
                 print(f"Player {game.state.idx_player_active} has no possible actions.")
 
             # Apply Action to Game
@@ -830,13 +825,12 @@ if __name__ == '__main__':
             # print(data)
             # await websocket.send_json(data)
 
-        print("Exchanged? ",game.state.bool_card_exchanged)
+        print("Exchanged? ", game.state.bool_card_exchanged)
         print("Speciality? card_active? ", game.state.card_active)
-        print("*"*50)
-
+        print("*" * 50)
 
         # Keeps game away from infinityloop
-        if debug_counter >30:
-            print("-"*50,"> break becaus of counter")
+        if debug_counter > 30:
+            print("-" * 50, "> break becaus of counter")
             break
-        debug_counter+=1
+        debug_counter += 1
