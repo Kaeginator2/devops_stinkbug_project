@@ -2006,7 +2006,7 @@ class DogBenchmark():
         list_is_save = [True, False]  # on path
         if pos_from > self.CNT_STEPS:
             list_is_save = [False]  # inside finish
-
+        
         for is_save in list_is_save:
 
             self.game = Dog()
@@ -2030,7 +2030,7 @@ class DogBenchmark():
                 hint += 'Error 1: "get_list_action" result is wrong.'
                 hint += f'\nAction not allowed: {action}'
                 hint += f'\nHint: Player 1 can not move to finish directly from Start (is_save=True).'
-                assert action not in list_action_found, hint
+                assert action not in list_action_found, hint +f'Card: {action.card}'
 
             else:
                 if steps > 0:
@@ -2038,7 +2038,7 @@ class DogBenchmark():
                     hint = str_states
                     hint += 'Error 2: "get_list_action" result is wrong'
                     hint += f'\nAction missing: {action}'
-                    assert action in list_action_found, hint
+                    assert action in list_action_found, hint+f'Card: {action.card}'
 
                     self.game.apply_action(action)
                     str_states += f'Action: {action}\n'
@@ -2196,7 +2196,7 @@ def run_all_tests():
         if method_name.startswith("test_"):
             docstring = method.__doc__ or "Keine Beschreibung vorhanden."
 
-            if not any(code in docstring for code in ["029", "030", "031", "032","033","034","035"]):
+            if not any(code in docstring for code in ["041"]):
                 continue
                 
             print(f"Ausfuehren des Tests: {method_name}")
