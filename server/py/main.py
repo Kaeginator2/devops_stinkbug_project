@@ -265,6 +265,8 @@ async def dog_simulation_ws(websocket: WebSocket):
     await websocket.accept()
 
     idx_player_you = 0
+    dog.Dog()
+    dog.RandomPlayer()
 
     try:
         game = dog.Dog()
@@ -306,28 +308,32 @@ async def dog_singleplayer(request: Request):
 async def dog_singleplayer_ws(websocket: WebSocket):
     await websocket.accept()
 
-    idx_player_you = 0  # Player index for the connected client
+    idx_player_you = 0
+    game = dog.Dog()
 
     try:
-        game = dog.Dog()
-
         while True:
             state = game.get_player_view(idx_player_you)
+
+            dict_state = state.model_dump()
+            dict_state['idx_player_you'] = idx_player_you
+            dict_state['list_action'] = [action.model_dump() for action in game.get_list_action()]
+
+            # Add the current active player index so the frontend knows whose turn it is
+            dict_state['idx_player_active'] = state.idx_player_active  # <-- ADDED
+
+            # Add a boolean to indicate if the game is finished
+            dict_state['bool_game_finished'] = (state.phase == dog.GamePhase.FINISHED)
+
+            # Add a 'selected_action' field (expected by some frontend logic)
+            dict_state['selected_action'] = None  # <-- ADDED
+
+            # Send updated state to the frontend
+            await websocket.send_json({'type': 'update', 'state': dict_state})
 
             if state.phase == dog.GamePhase.FINISHED:
                 break
 
-            # Send game state and valid actions
-            dict_state = state.dict() if isinstance(state, BaseModel) else state  # Ensure state is serialized properly
-            dict_state['idx_player_you'] = idx_player_you
-            dict_state['list_action'] = [
-                action.dict() if isinstance(action, BaseModel) else action
-                for action in game.get_list_action()
-            ]
-
-            await websocket.send_json({'type': 'update', 'state': dict_state})
-
-            # Wait for user action
             data = await websocket.receive_json()
             if data['type'] == 'action':
                 action = dog.Action(**data['action'])
@@ -335,6 +341,3 @@ async def dog_singleplayer_ws(websocket: WebSocket):
 
     except WebSocketDisconnect:
         print('DISCONNECTED')
-
-
-
