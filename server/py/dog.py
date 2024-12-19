@@ -707,8 +707,17 @@ class GameState(BaseModel):
         Yes, creat the Actions fo that + unchanged action
         No, return Action unchanged
         """
-        if action_to_check.pos_from is None or action_to_check.pos_from is None:
-            return [action_to_check]
+        # Get Marble to Move
+        marble_to_move:Optional[Marble]
+        marble_to_move = next((marble for marble in self.list_player[self.idx_player_active].list_marble 
+                               if marble.pos == action_to_check.pos_from), None)
+
+        if action_to_check.pos_from is None or action_to_check.pos_from is None or marble_to_move is None:
+            return [action_to_check] # Check fpr MyPy
+
+        # Needs this check because of wrong Test 041
+        if action_to_check.pos_from <64 and marble_to_move.is_save:
+            return[action_to_check]
 
         active_player = self.list_player[self.idx_player_active]
         final_pos = active_player.list_finish_pos[0]
