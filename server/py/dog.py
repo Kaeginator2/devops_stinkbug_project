@@ -503,7 +503,7 @@ class GameState(BaseModel):
                         return False
 
                 # Blockieren durch Überholen im Finish-Bereich
-                if marble.is_save and marble.pos in player.list_finish_pos:
+                if marble.pos in player.list_finish_pos:
                     if action.pos_from < marble.pos <= action.pos_to:
                         return False
 
