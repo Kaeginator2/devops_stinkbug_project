@@ -695,6 +695,16 @@ class GameState(BaseModel):
                     if marble.pos == action.pos_to and marble.is_save:
                         return False
 
+            # Blockieren durch Überholen im Finish-Bereich
+            if marble.is_save and marble.pos in player.list_finish_pos:
+                if action.pos_from < marble.pos <= action.pos_to:
+                    return False
+
+            # Allgemeine Bewegung vorwärts blockiert
+            if action.pos_from < marble.pos <= action.pos_to:
+                if marble.is_save and marble.pos in save_positions:
+                    return False
+
         # Wenn keine Blockade gefunden wurde
         return True
 
