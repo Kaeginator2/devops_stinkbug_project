@@ -755,6 +755,17 @@ class GameState(BaseModel):
         pos_to = action_to_check.pos_to
         if pos_to is None:
             return [action_to_check] # Needed for MyPy
+        
+                # Move in Final
+        if pos_from > 67:
+            if pos_to is None:
+                return [action_to_check]  # Needed for MyPy
+            steps = pos_to - pos_from
+            if steps < 4:
+                return [Action(card=action_to_check.card,
+                            pos_from=pos_from,
+                            pos_to=pos_from + steps,
+                            card_swap=action_to_check.card_swap)]
 
         if pos_to >= startpos and pos_from < 64:
             leftover = pos_to - startpos
