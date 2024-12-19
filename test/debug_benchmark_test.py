@@ -2006,6 +2006,9 @@ class DogBenchmark():
         list_is_save = [True, False]  # on path
         if pos_from > self.CNT_STEPS:
             list_is_save = [False]  # inside finish
+
+        if pos_from >=68:
+            print("debug_break")
         
         for is_save in list_is_save:
 
