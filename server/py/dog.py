@@ -234,6 +234,24 @@ class GameState(BaseModel):
                     actions.append(action_final[0])
 
         return actions
+    
+    def get_move_action(self, movement:int, card:Card, marble:Marble) -> List[Action]:
+        action_list = []
+        # Chek if Marble is in Final
+        if marble.pos>64:
+            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + movement), card_swap=None)
+        else:
+            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + movement) % 64, card_swap=None)
+
+        # Calculat possibility
+        if self.skip_save_marble(action):
+            action_list.append(action)
+        going_final_action_list = self.go_in_final(action)
+        if going_final_action_list:
+            for action in going_final_action_list:
+                if self.skip_save_marble(action):
+                    action_list.append(action)
+        return action_list
 
     def get_list_possible_action(self) -> List[Action]:  # Nicolas
 
@@ -261,18 +279,18 @@ class GameState(BaseModel):
                             case 'K':
                                 leaving_marble = marble
                                 action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None)
-                                if not self.skip_save_marble(action):
+                                if self.skip_save_marble(action):
                                     action_list.append(action)
                             case 'A':
                                 leaving_marble = marble
                                 action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos,
                                                 card_swap=None)
-                                if not self.skip_save_marble(action):
+                                if self.skip_save_marble(action):
                                     action_list.append(action)
                             case 'JKR':
                                 leaving_marble = marble
                                 action = Action(card=card, pos_from=marble.pos, pos_to=active_player.start_pos, card_swap=None)
-                                if not self.skip_save_marble(action):
+                                if self.skip_save_marble(action):
                                     action_list.append(action)
                             case _:
                                 pass
@@ -280,95 +298,26 @@ class GameState(BaseModel):
                 for card in cards:
                     match card.rank:
                         case '2':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + 2) % 64, card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=2 , card=card, marble=marble))
 
                         case '3':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + 3) % 64, card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=3 , card=card, marble=marble))
                         case '4':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos + 4) % 64, card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos -4) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=4 , card=card, marble=marble))
+                            action_list.extend(self.get_move_action(movement=-4 , card=card, marble=marble))
                         case '5':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +5) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=5 , card=card, marble=marble))
                         case '6':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +6) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=6 , card=card, marble=marble))
                         case '7':
                             action_list.extend(self.get_seven_actions(card=card, marble=marble))
 
                         case '8':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +8) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                           action_list.extend(self.get_move_action(movement=8 , card=card, marble=marble))
                         case '9':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +9) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=9 , card=card, marble=marble))
                         case '10':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +10) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=10 , card=card, marble=marble))
                         case 'J':
                             for oponent_player in oponent_players:
                                 for oponent_marble in oponent_player.list_marble:
@@ -381,44 +330,12 @@ class GameState(BaseModel):
                                         oponent_marble.is_save = False
 
                         case 'Q':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +12) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=12 , card=card, marble=marble))
                         case 'K':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +13) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                           action_list.extend(self.get_move_action(movement=13 , card=card, marble=marble))
                         case 'A':
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +1) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
-                            action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +11) % 64,
-                                            card_swap=None)
-                            if self.skip_save_marble(action):
-                                action_list.append(action)
-                            going_final_action_list = self.go_in_final(action)
-                            if going_final_action_list:
-                                for action in going_final_action_list:
-                                    if self.skip_save_marble(action):
-                                        action_list.append(action)
+                            action_list.extend(self.get_move_action(movement=1 , card=card, marble=marble))
+                            action_list.extend(self.get_move_action(movement=11 , card=card, marble=marble))
 
                         case 'JKR':
                             action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +2) % 64,
