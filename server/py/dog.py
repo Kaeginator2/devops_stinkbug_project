@@ -686,7 +686,7 @@ class GameState(BaseModel):
         if action.pos_from is None or action.pos_to is None:
             return False # Needed for MyPy (Error in Action)
 
-        save_positions = [0, 16, 32, 48]
+        save_positions: list[int] = [0, 16, 32, 48]
 
         for player in self.list_player:
             for marble in player.list_marble:
@@ -695,15 +695,24 @@ class GameState(BaseModel):
                     if marble.pos == action.pos_to and marble.is_save:
                         return False
 
-            # Blockieren durch Überholen im Finish-Bereich
-            if marble.is_save and marble.pos in player.list_finish_pos:
-                if action.pos_from < marble.pos <= action.pos_to:
-                    return False
+                # Blockieren durch Überholen im Finish-Bereich
+                if marble.is_save and marble.pos in player.list_finish_pos:
+                    if action.pos_from < marble.pos <= action.pos_to:
+                        return False
 
-            # Allgemeine Bewegung vorwärts blockiert
-            if action.pos_from < marble.pos <= action.pos_to:
-                if marble.is_save and marble.pos in save_positions:
-                    return False
+                # Allgemeine Bewegung vorwärts blockiert
+                if action.pos_from < marble.pos <= action.pos_to:
+                    if marble.is_save and marble.pos in save_positions:
+                        return False
+
+                # Allgemeine Bewegung rückwärts blockiert
+                if action.pos_from > marble.pos >= action.pos_to:
+                    if marble.is_save and marble.pos in save_positions:
+                        return False
+
+                if action.pos_from > marble.pos <= action.pos_to:
+                    if marble.is_save and marble.pos in save_positions:
+                        return False
 
         # Wenn keine Blockade gefunden wurde
         return True
