@@ -373,10 +373,12 @@ class GameState(BaseModel):
                             for oponent_player in oponent_players:
                                 for oponent_marble in oponent_player.list_marble:
                                     if not oponent_marble.is_save:
+                                        oponent_marble.is_save = True
                                         action_list.append(Action(card = card,pos_from = marble.pos,
                                                                   pos_to = oponent_marble.pos, card_swap = None))
                                         action_list.append(Action(card = card,pos_from = oponent_marble.pos ,
                                                                   pos_to = marble.pos, card_swap = None))
+                                        oponent_marble.is_save = False
 
                         case 'Q':
                             action = Action(card=card, pos_from=marble.pos, pos_to=(marble.pos +12) % 64,
@@ -587,12 +589,34 @@ class GameState(BaseModel):
         if self.cnt_seven_steps == 7:
             self.card_active = None
 
+    def apply_jack_action(self, action: Action)->None:
+        sub_action = Action(card = action.card,pos_from = action.pos_from,pos_to = action.pos_to, card_swap = None)
+        self.set_action_to_game(sub_action)
+
+
+
 
     def set_action_to_game(self, action: Action)-> None:  # kaegi
         # Action is from the active Player
         # Set Action to the GameState ==> make movement on the "board"
         if action.pos_from is None or action.pos_to is None:
             return # Needed for MyPy
+
+        if action.card.rank == 'J':
+            marble_from = None
+            marble_to = None
+            for player in self.list_player:
+                for marble in player.list_marble:
+                    if marble.pos == action.pos_from:
+                        marble_from = marble
+                    elif marble.pos == action.pos_to:
+                        marble_to = marble
+            if marble_from is None or marble_to is None:
+                return # Niided for MaiPai
+            marble_from.pos = action.pos_to
+            marble_to.pos = action.pos_from
+            return
+
 
         # Get Marble to Move
         marble_to_move:Optional[Marble]
@@ -644,6 +668,9 @@ class GameState(BaseModel):
         Checks if the active marble jumps on another marble. 
         If so, sends the other marble back to its start position.
         """
+        if self.card_active == 'J':
+            return
+
         for selected_player in self.list_player:
             for p_marble in selected_player.list_marble:
                 # Check if the marble occupies the same position but isn't the same marble
@@ -849,6 +876,7 @@ class Dog(Game):
                 self.state.card_active = None
                 return # Retry without next Player
 
+
         # Check if exchange cards is needed
         elif self.state.bool_card_exchanged is False:
             self.state.exchange_cards(action)
@@ -861,6 +889,9 @@ class Dog(Game):
                 self.seven_backup = copy.deepcopy(self.state)
             if action.card.rank == '7':
                 self.state.apply_seven_action(action)
+            if action.card.rank == 'J':
+                self.state.card_active = action.card
+                self.state.apply_jack_action(action)
 
             else:
                 self.state.set_action_to_game(action)
