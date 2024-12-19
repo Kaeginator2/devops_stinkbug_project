@@ -6,6 +6,8 @@ from fastapi.templating import Jinja2Templates
 import json
 import asyncio
 
+from pydantic import BaseModel
+
 import server.py.hangman as hangman
 import server.py.battleship_solution as battleship
 #import server.py.battleship as battleship
@@ -262,10 +264,36 @@ async def dog_simulation(request: Request):
 async def dog_simulation_ws(websocket: WebSocket):
     await websocket.accept()
 
+    idx_player_you = 0
+    dog.Dog()
+    dog.RandomPlayer()
+
     try:
         game = dog.Dog()
         player = dog.RandomPlayer()
-        
+
+        while True:
+            state = game.get_state()
+            list_action = game.get_list_action()
+            action = None
+            if len(list_action) > 0:
+                action = player.select_action(state, list_action)
+
+            dict_state = state.model_dump()
+            dict_state['idx_player_you'] = idx_player_you
+            dict_state['list_action'] = []
+            dict_state['selected_action'] = None if action is None else action.model_dump()
+            data = {'type': 'update', 'state': dict_state}
+            await websocket.send_json(data)
+
+            if state.phase == dog.GamePhase.FINISHED:
+                break
+
+            data = await websocket.receive_json()
+
+            if data['type'] == 'action':
+                action = dog.Action.model_validate(data['action'])
+                game.apply_action(action)
 
     except WebSocketDisconnect:
         print('DISCONNECTED')
@@ -280,22 +308,36 @@ async def dog_singleplayer(request: Request):
 async def dog_singleplayer_ws(websocket: WebSocket):
     await websocket.accept()
 
-    try:
-        game = dog.Dog()
-        
-        
-
-    except WebSocketDisconnect:
-        print('DISCONNECTED')
-
-
-@app.websocket("/dog/random_player/ws")
-async def dog_random_player_ws(websocket: WebSocket):
-    await websocket.accept()
+    idx_player_you = 0
+    game = dog.Dog()
 
     try:
+        while True:
+            state = game.get_player_view(idx_player_you)
 
-        pass
+            dict_state = state.model_dump()
+            dict_state['idx_player_you'] = idx_player_you
+            dict_state['list_action'] = [action.model_dump() for action in game.get_list_action()]
+
+            # Add the current active player index so the frontend knows whose turn it is
+            dict_state['idx_player_active'] = state.idx_player_active  # <-- ADDED
+
+            # Add a boolean to indicate if the game is finished
+            dict_state['bool_game_finished'] = (state.phase == dog.GamePhase.FINISHED)
+
+            # Add a 'selected_action' field (expected by some frontend logic)
+            dict_state['selected_action'] = None  # <-- ADDED
+
+            # Send updated state to the frontend
+            await websocket.send_json({'type': 'update', 'state': dict_state})
+
+            if state.phase == dog.GamePhase.FINISHED:
+                break
+
+            data = await websocket.receive_json()
+            if data['type'] == 'action':
+                action = dog.Action(**data['action'])
+                game.apply_action(action)
 
     except WebSocketDisconnect:
         print('DISCONNECTED')
