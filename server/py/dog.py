@@ -371,6 +371,7 @@ class GameState(BaseModel):
         if action.pos_from is None or action.pos_to is None:
             return # Activate the seven
         # Set Action to the GameState ==> make movement on the "board"
+
         if action.pos_to<64:
             steps_to_make = action.pos_to - action.pos_from
             current_pos = action.pos_from
