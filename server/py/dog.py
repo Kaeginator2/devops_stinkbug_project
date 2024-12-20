@@ -513,6 +513,7 @@ class GameState(BaseModel):
         Gibt False zurück, wenn eine sichere Murmel in diesem Bereich gefunden wird,
         andernfalls True.
         """
+        return_value = True
         if action.pos_from is None or action.pos_to is None:
             return False # Needed for MyPy (Error in Action)
 
@@ -523,29 +524,29 @@ class GameState(BaseModel):
                 # Blockieren durch sichere Murmel auf der Zielposition (Finish)
                 if action.pos_to in player.list_finish_pos:
                     if marble.pos == action.pos_to and marble.is_save:
-                        return False
+                        return_value = False
 
                 # Blockieren durch Überholen im Finish-Bereich
                 if marble.pos in player.list_finish_pos:
                     if action.pos_from < marble.pos <= action.pos_to:
-                        return False
+                        return_value = False
 
                 # Allgemeine Bewegung vorwärts blockiert
                 if action.pos_from < marble.pos <= action.pos_to:
                     if marble.is_save and marble.pos in save_positions:
-                        return False
+                        return_value = False
 
                 # Allgemeine Bewegung rückwärts blockiert
                 if action.pos_from > marble.pos >= action.pos_to:
                     if marble.is_save and marble.pos in save_positions:
-                        return False
+                        return_value = False
 
                 if action.pos_from > marble.pos <= action.pos_to:
                     if marble.is_save and marble.pos in save_positions:
-                        return False
+                        return_value = False
 
         # Wenn keine Blockade gefunden wurde
-        return True
+        return return_value
 
     def is_player_finished(self, player: PlayerState) -> bool:
         for marble in player.list_marble:
