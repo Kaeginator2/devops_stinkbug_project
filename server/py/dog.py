@@ -183,8 +183,7 @@ class GameState(BaseModel):
         for selected_player in self.list_player:
             if not selected_player.list_card:
                 continue
-            else:
-                return
+            return
         # Go to next Gameround
         self.cnt_round += 1
 
@@ -266,7 +265,7 @@ class GameState(BaseModel):
                 action_list.append(Action(card=card, pos_from=None,pos_to=None, card_swap=Card(suit=suit, rank=rank)))
         return action_list
 
-    def get_list_possible_action(self) -> List[Action]:  # Nicolas
+    def get_list_possible_action(self) -> List[Action]: # pylint: disable=too-many-branches, too-many-statements
         active_player = self.list_player[self.idx_player_active]
         if self.card_active is not None:
             cards = [self.card_active]
@@ -507,7 +506,7 @@ class GameState(BaseModel):
                 if p_marble.pos == moved_marble.pos and p_marble != moved_marble:
                     p_marble.pos = p_marble.start_pos
 
-    def skip_save_marble(self, action: Action) -> bool:
+    def skip_save_marble(self, action: Action) -> bool: # pylint: disable=too-many-branches, too-many-statements
         """
         Prüft, ob zwischen action.pos_from und action.pos_to sichere Murmeln liegen.
         Gibt False zurück, wenn eine sichere Murmel in diesem Bereich gefunden wird,
@@ -564,7 +563,7 @@ class GameState(BaseModel):
                 self.phase = GamePhase.FINISHED
                 return
 
-    def go_in_final(self, action_to_check: Action) -> List[Action]:
+    def go_in_final(self, action_to_check: Action) -> List[Action]: # pylint: disable=too-many-return-statements
         """
         Checks if it is possible to go in the final
         Yes, creat the Actions fo that + unchanged action

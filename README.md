@@ -64,6 +64,8 @@ python benchmark/benchmark_dog.py python dog.Dog > logs\benchmark_%DATE:~10,4%%D
 set PYTHONPATH=%cd%                    # in Command Prompt
 $env:PYTHONPATH = (Get-Location).Path  # in PowerShell
 pytest test/test_dog.py
+pylint ./server/py/dog.py 
+
 ````
 
 ### Start the Server
