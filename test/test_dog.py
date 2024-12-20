@@ -1016,6 +1016,25 @@ class TestDog1:
         for i in range(1, 4):
             assert all(card.rank == "X" for card in player_view.list_player[i].list_card)
 
+# Tests für Card-Klasse
+def test_card_equality():
+    card1 = Card(suit="Hearts", rank="Ace")
+    card2 = Card(suit="Hearts", rank="Ace")
+    card3 = Card(suit="Diamonds", rank="Ace")
+    assert card1 == card2
+    assert card1 != card3
+
+def test_card_hash():
+    card1 = Card(suit="Hearts", rank="Ace")
+    card2 = Card(suit="Hearts", rank="Ace")
+    assert hash(card1) == hash(card2)
+
+# Tests für Marble-Klasse
+def test_marble_initialization():
+    marble = Marble(pos=45, is_save=False, start_pos=0)
+    assert marble.pos == 45
+    assert marble.is_save == False
+    assert marble.start_pos == 0
 
 if __name__ == '__main__':
     # Tests für TestKaegisDogParts
@@ -1025,7 +1044,6 @@ if __name__ == '__main__':
     testKaegisDogParts.test_init_next_turn()
     testKaegisDogParts.test_exchange_cards()
     testKaegisDogParts.test_discard_invalid_cards()
-    testKaegisDogParts.test_go_in_final()
     testKaegisDogParts.test_set_action_to_game()
 
     # Tests für TestGameState

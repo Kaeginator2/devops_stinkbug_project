@@ -750,10 +750,10 @@ class RandomPlayer(Player):
 if __name__ == '__main__':
     print("*" * 30, "- START GAME -", "*" * 30)
 
-    idx_player_you = 0
+    IDX_PLAYER_YOU = 0
     game = Dog()
     player = RandomPlayer()
-    debug_counter = 0
+    DEBUG_COUNTER = 0
 
     while True:
 
@@ -766,9 +766,9 @@ if __name__ == '__main__':
 
         # game.print_state()
 
-        if state.idx_player_active == idx_player_you:
+        if state.idx_player_active == IDX_PLAYER_YOU:
 
-            player_state = game.get_player_view(idx_player_you)
+            player_state = game.get_player_view(IDX_PLAYER_YOU)
             list_action = game.get_list_action()
 
             # await websocket.send_json(data)
@@ -778,23 +778,22 @@ if __name__ == '__main__':
                 print("You are playing")
 
                 dict_state = player_state.model_dump()  # <=== Method of BaseModel !!
-                dict_state['idx_player_you'] = idx_player_you
+                dict_state['idx_player_you'] = IDX_PLAYER_YOU
                 dict_state['list_action'] = [action.model_dump() for action in list_action]
                 data = {'type': 'update', 'state': dict_state}
 
             else:  # if not: delet all cards for this round
                 print("You don't have any possible Actions")
 
-            # FIXME: Needs to get Choos from Server (real Player)
             action = player.select_action(game.state, list_action)  # Random Select an Action for debug
 
             print(f"Action from Player{state.idx_player_active} is", action)
             # Apply Action to Game
             game.apply_action(action)
 
-            state = game.get_player_view(idx_player_you)
+            state = game.get_player_view(IDX_PLAYER_YOU)
             dict_state = state.model_dump()
-            dict_state['idx_player_you'] = idx_player_you
+            dict_state['idx_player_you'] = IDX_PLAYER_YOU
             dict_state['list_action'] = []
 
             data = {'type': 'update', 'state': dict_state}
@@ -817,9 +816,9 @@ if __name__ == '__main__':
             # Apply Action to Game
             game.apply_action(action)
 
-            player_state = game.get_player_view(idx_player_you)  # Abbildung für Person zeigen
+            player_state = game.get_player_view(IDX_PLAYER_YOU)  # Abbildung für Person zeigen
             dict_state = player_state.model_dump()
-            dict_state['idx_player_you'] = idx_player_you
+            dict_state['idx_player_you'] = IDX_PLAYER_YOU
             dict_state['list_action'] = []
             data = {'type': 'update', 'state': dict_state}
             # print(data)
@@ -830,7 +829,8 @@ if __name__ == '__main__':
         print("*" * 50)
 
         # Keeps game away from infinityloop
-        if debug_counter > 30:
+        if DEBUG_COUNTER > 30:
             print("-" * 50, "> break becaus of counter")
             break
-        debug_counter += 1
+        DEBUG_COUNTER += 1
+        
