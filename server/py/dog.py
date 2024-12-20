@@ -371,18 +371,48 @@ class GameState(BaseModel):
         if action.pos_from is None or action.pos_to is None:
             return # Activate the seven
         # Set Action to the GameState ==> make movement on the "board"
-        steps_to_make = action.pos_to - action.pos_from
-        current_pos = action.pos_from
+        if action.pos_to<64:
+            steps_to_make = action.pos_to - action.pos_from
+            current_pos = action.pos_from
 
-        for _ in range(steps_to_make):
-            # Creat subaction to use set_action_to_game
-            sub_action = Action(card=action.card,
-                                pos_from=current_pos,
-                                pos_to=current_pos + 1,
-                                card_swap=action.card_swap)
-            self.set_action_to_game(sub_action)
-            self.cnt_seven_steps += 1
-            current_pos += 1  # Update current_pos for the next sub_action
+            for _ in range(steps_to_make):
+                # Creat subaction to use set_action_to_game
+                sub_action = Action(card=action.card,
+                                    pos_from=current_pos,
+                                    pos_to=current_pos + 1,
+                                    card_swap=action.card_swap)
+                self.set_action_to_game(sub_action)
+                self.cnt_seven_steps += 1
+                current_pos += 1  # Update current_pos for the next sub_action
+        else:
+            final_pos = 64 + 8 * self.idx_player_active + 3
+            if self.list_player[self.idx_player_active].start_pos == 0:
+                startpos = 64
+            else:
+                startpos = self.list_player[self.idx_player_active].start_pos
+            if action.pos_from>64:
+                steps_to_make = action.pos_to - final_pos
+            else:
+                steps_to_make = startpos - action.pos_from + action.pos_to - final_pos
+            current_pos = action.pos_from
+
+            for _ in range(steps_to_make):
+                # Bestimme die nächste Position, bevor eine Aktion erstellt wird
+                next_pos = current_pos + 1
+                if next_pos == startpos+1:
+                    # Wenn der nächste Schritt 64 erreichen würde, springe direkt zu final_pos
+                    next_pos = final_pos+1
+
+                # Erzeuge sub_action für die Verwendung in set_action_to_game
+                sub_action = Action(card=action.card,
+                                    pos_from=current_pos,
+                                    pos_to=next_pos,
+                                    card_swap=action.card_swap)
+                self.set_action_to_game(sub_action)
+                self.cnt_seven_steps += 1
+
+                # Aktualisiere current_pos auf next_pos für die nächste Iteration
+                current_pos = next_pos
 
         # finish the seven action if there were made 7 steps
         if self.cnt_seven_steps == 7:
@@ -571,8 +601,6 @@ class GameState(BaseModel):
                             pos_from=pos_from,
                             pos_to=pos_from + steps,
                             card_swap=action_to_check.card_swap)]
-            else:
-                return []
 
         if pos_to >= startpos and pos_from < 64:
             leftover = pos_to - startpos

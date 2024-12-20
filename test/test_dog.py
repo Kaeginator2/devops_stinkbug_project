@@ -1065,17 +1065,8 @@ if __name__ == '__main__':
     actionlist.test_get_list_possible_action1()
 
 
-
-
-
-
-
 # test_set_state
 # test get_state
 # test print_state
 # test get_player_view
-
-
-
-
 

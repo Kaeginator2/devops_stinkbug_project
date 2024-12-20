@@ -2199,7 +2199,7 @@ def run_all_tests():
         if method_name.startswith("test_"):
             docstring = method.__doc__ or "Keine Beschreibung vorhanden."
 
-            if not any(code in docstring for code in ["041"]):
+            if not any(code in docstring for code in ["034"]):
                 continue
                 
             print(f"Ausfuehren des Tests: {method_name}")
