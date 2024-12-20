@@ -55,6 +55,29 @@ class TestKaegisDogParts:
 
         print("Completed Test setup_players")
 
+    def test_go_in_final(self)-> None:
+        game = Dog()
+
+        marble = game.state.list_player[0].list_marble[0]  # Erste Murmel von Spieler 1
+        marble.pos = 60  # Setze Position nahe dem Zielbereich
+        action = Action(card=Card(suit='♠', rank='3'), pos_from=60, pos_to=63)
+
+        final_actions = game.state.go_in_final(action)
+        assert len(final_actions) == 1
+        assert final_actions[0].pos_to == 63, "Die Aktion sollte gültig sein, um ins Ziel zu gehen."
+
+
+    def test_init_next_turn(self)-> None:
+        game = Dog()
+
+
+        initial_active = game.state.idx_player_active
+        game.state.init_next_turn()
+        expected_next_active = (initial_active + 1) % 4
+
+        assert game.state.idx_player_active == expected_next_active, "Der nächste aktive Spieler sollte aktualisiert werden."
+        assert game.state.idx_player_active != initial_active, "Der aktive Spieler sollte wechseln nach Aufruf von init_next_turn."
+
     def test_deal_cards(self) -> None:
         game = Dog()
 
@@ -101,6 +124,32 @@ class TestKaegisDogParts:
             player.list_card = []
 
         print("Compleeted Test deal_cards")
+
+    def test_str_method(self, capfd) -> None:
+        game = Dog()
+
+        print(game.state)  # Ausgabe des Spielzustands
+
+        captured = capfd.readouterr()
+        output = captured.out.strip()
+        assert "Game Phase:" in output
+        assert "Active Player Index:" in output
+        assert "Cards in Draw Pile:" in output
+        assert "Player 1 (PlayerBlue):" in output, "Die Ausgabe sollte Informationen über Spieler 1 enthalten."
+
+    def test_joker_actions(self)->None:
+        game = Dog()
+        player = game.state.list_player[0]
+
+        # Füge einen Joker zur Hand des Spielers hinzu
+        joker_card = Card(suit='', rank='JKR')
+        player.list_card.append(joker_card)
+
+        # Teste die Joker-Aktionen
+        game.state.card_active = joker_card
+        actions = game.state.get_joker_actions_normal(joker_card)
+        assert len(actions) > 0, "Joker-Aktionen sollten generiert werden."
+        assert any(action.card_swap.rank != 'A' for action in actions), "A-Ass sollte als mögliche Aktion enthalten sein."
 
     def test_init_next_turn(self) -> None:
         game = Dog()
