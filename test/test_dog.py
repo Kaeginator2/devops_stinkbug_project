@@ -964,7 +964,6 @@ class TestGameState1:
         game_state.deal_cards()
         assert len(game_state.list_card_draw) > 0  # Check if deck is replenished
 
-
     def test_round_transition(self, game_state):
         initial_round = game_state.cnt_round
         game_state.deal_cards()  # Simulate end of a round
@@ -979,6 +978,141 @@ class TestGameState1:
         card = Card(suit="♠", rank="7")
         game_state.card_active = card
         assert game_state.card_active == card
+
+    def test_get_joker_actions_kennel_out2(self, game_state):
+        """
+        Test the get_joker_actions_kennel_out method.
+        """
+        joker_card = Card(suit="", rank="JKR")
+        actions = game_state.get_joker_actions_kennel_out(joker_card)
+
+        # Expected actions: combinations of Joker with King and Ace for all suits
+        expected_actions = [
+                               Action(card=joker_card, pos_from=None, pos_to=None,
+                                      card_swap=Card(suit=suit, rank="K"))
+                               for suit in GameState.LIST_SUIT
+                           ] + [
+                               Action(card=joker_card, pos_from=None, pos_to=None,
+                                      card_swap=Card(suit=suit, rank="A"))
+                               for suit in GameState.LIST_SUIT
+                           ]
+
+        assert sorted(actions, key=str) == sorted(expected_actions, key=str), \
+            "Joker kennel out actions mismatch."
+
+    def test_get_joker_actions_normal2(self, game_state):
+        """
+        Test the get_joker_actions_normal method.
+        """
+        joker_card = Card(suit="", rank="JKR")
+        actions = game_state.get_joker_actions_normal(joker_card)
+
+        # Expected actions: Joker paired with all valid suits and ranks except "JKR"
+        expected_actions = [
+            Action(card=joker_card, pos_from=None, pos_to=None, card_swap=Card(suit=suit, rank=rank))
+            for suit in GameState.LIST_SUIT
+            for rank in GameState.LIST_RANK[:-2]  # Exclude "JKR"
+        ]
+
+        assert sorted(actions, key=str) == sorted(expected_actions, key=str), \
+            "Joker normal actions mismatch."
+
+class TestAction:
+    def test_action_equality(self):
+        """
+        Test equality of two Action instances.
+        """
+        card = Card(suit="♠", rank="5")
+        action1 = Action(card=card, pos_from=10, pos_to=15)
+        action2 = Action(card=card, pos_from=10, pos_to=15)
+        action3 = Action(card=card, pos_from=10, pos_to=20)
+
+        assert action1 == action2, "Actions with identical attributes should be equal."
+        assert action1 != action3, "Actions with different attributes should not be equal."
+
+    def test_action_hash(self):
+        """
+        Test hashing of Action instances.
+        """
+        card = Card(suit="♠", rank="5")
+        action1 = Action(card=card, pos_from=10, pos_to=15)
+        action2 = Action(card=card, pos_from=10, pos_to=15)
+
+        action_set = {action1}
+        assert action2 in action_set, "Actions with identical attributes should have the same hash."
+
+    def test_action_initialization(self):
+        """
+        Test initialization of Action instances.
+        """
+        card = Card(suit="♠", rank="7")
+        action = Action(card=card, pos_from=5, pos_to=12, card_swap=None)
+
+        assert action.card == card
+        assert action.pos_from == 5
+        assert action.pos_to == 12
+        assert action.card_swap is None
+
+class TestPlayerState:
+    def test_player_state_initialization(self):
+        """
+        Test initialization of PlayerState instances.
+        """
+        marbles = [
+            Marble(pos=64, is_save=True, start_pos=64),
+            Marble(pos=65, is_save=True, start_pos=65),
+        ]
+        cards = [Card(suit="♠", rank="7"), Card(suit="♥", rank="A")]
+        player_state = PlayerState(
+            name="PlayerBlue",
+            list_card=cards,
+            list_marble=marbles,
+            list_kennel_pos=[64, 65],
+            list_finish_pos=[68, 69],
+            start_pos=0,
+        )
+
+        assert player_state.name == "PlayerBlue"
+        assert player_state.list_card == cards
+        assert player_state.list_marble == marbles
+        assert player_state.list_kennel_pos == [64, 65]
+        assert player_state.list_finish_pos == [68, 69]
+        assert player_state.start_pos == 0
+
+    def test_player_state_add_card(self):
+        """
+        Test adding a card to the player's hand.
+        """
+        player_state = PlayerState(
+            name="PlayerBlue",
+            list_card=[],
+            list_marble=[],
+            list_kennel_pos=[],
+            list_finish_pos=[],
+            start_pos=0,
+        )
+        card = Card(suit="♠", rank="5")
+        player_state.list_card.append(card)
+
+        assert card in player_state.list_card, "Card should be added to player's hand."
+
+    def test_player_state_update_marble_position(self):
+        """
+        Test updating the position of a player's marble.
+        """
+        marble = Marble(pos=64, is_save=True, start_pos=64)
+        player_state = PlayerState(
+            name="PlayerBlue",
+            list_card=[],
+            list_marble=[marble],
+            list_kennel_pos=[64],
+            list_finish_pos=[68],
+            start_pos=0,
+        )
+        marble.pos = 68  # Update marble's position
+
+        assert player_state.list_marble[0].pos == 68, "Marble position should be updated."
+
 
 class TestDog1:
     @pytest.fixture
@@ -1016,25 +1150,7 @@ class TestDog1:
         for i in range(1, 4):
             assert all(card.rank == "X" for card in player_view.list_player[i].list_card)
 
-# Tests für Card-Klasse
-def test_card_equality():
-    card1 = Card(suit="Hearts", rank="Ace")
-    card2 = Card(suit="Hearts", rank="Ace")
-    card3 = Card(suit="Diamonds", rank="Ace")
-    assert card1 == card2
-    assert card1 != card3
 
-def test_card_hash():
-    card1 = Card(suit="Hearts", rank="Ace")
-    card2 = Card(suit="Hearts", rank="Ace")
-    assert hash(card1) == hash(card2)
-
-# Tests für Marble-Klasse
-def test_marble_initialization():
-    marble = Marble(pos=45, is_save=False, start_pos=0)
-    assert marble.pos == 45
-    assert marble.is_save == False
-    assert marble.start_pos == 0
 
 if __name__ == '__main__':
     # Tests für TestKaegisDogParts
